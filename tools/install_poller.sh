@@ -18,6 +18,9 @@ cat > "$PLIST" <<PLISTEOF
     <string>$DIR/poll_live.py</string>
     <string>--ids</string><string>$DIR/sensored_ids.txt</string>
     <string>--data-dir</string><string>$DIR/data</string>
+    <string>--collector</string><string>laptop</string>
+    <string>--only-hours</string><string>8-18</string>
+    <string>--only-weekdays</string>
   </array>
   <key>WorkingDirectory</key><string>$DIR</string>
   <key>StartInterval</key><integer>300</integer>
