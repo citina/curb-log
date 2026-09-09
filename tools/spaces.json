@@ -1,0 +1,2482 @@
+{
+"C100": {
+"spaceid": "C100",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024711",
+"longitude": "-118.291679"
+}
+},
+"C1004": {
+"spaceid": "C1004",
+"blockface": "3100 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02626",
+"longitude": "-118.291404"
+}
+},
+"C1005": {
+"spaceid": "C1005",
+"blockface": "3000 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026313",
+"longitude": "-118.291403"
+}
+},
+"C1006": {
+"spaceid": "C1006",
+"blockface": "3000 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026592",
+"longitude": "-118.291406"
+}
+},
+"C1007": {
+"spaceid": "C1007",
+"blockface": "3000 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026649",
+"longitude": "-118.291406"
+}
+},
+"C1009": {
+"spaceid": "C1009",
+"blockface": "3000 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026777",
+"longitude": "-118.291407"
+}
+},
+"C101": {
+"spaceid": "C101",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024633",
+"longitude": "-118.291679"
+}
+},
+"C1010": {
+"spaceid": "C1010",
+"blockface": "3000 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027083",
+"longitude": "-118.291437"
+}
+},
+"C1011": {
+"spaceid": "C1011",
+"blockface": "3000 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027158",
+"longitude": "-118.291437"
+}
+},
+"C1012": {
+"spaceid": "C1012",
+"blockface": "3000 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027212",
+"longitude": "-118.291436"
+}
+},
+"C1014": {
+"spaceid": "C1014",
+"blockface": "1200 30TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027369",
+"longitude": "-118.291084"
+}
+},
+"C1015": {
+"spaceid": "C1015",
+"blockface": "1200 30TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027369",
+"longitude": "-118.290983"
+}
+},
+"C1016": {
+"spaceid": "C1016",
+"blockface": "1201 30TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027488",
+"longitude": "-118.291021"
+}
+},
+"C1017": {
+"spaceid": "C1017",
+"blockface": "1201 30TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027488",
+"longitude": "-118.291126"
+}
+},
+"C1018": {
+"spaceid": "C1018",
+"blockface": "1201 30TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027489",
+"longitude": "-118.29119"
+}
+},
+"C102": {
+"spaceid": "C102",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024574",
+"longitude": "-118.291681"
+}
+},
+"C103": {
+"spaceid": "C103",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024501",
+"longitude": "-118.29168"
+}
+},
+"C104": {
+"spaceid": "C104",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024442",
+"longitude": "-118.29168"
+}
+},
+"C105": {
+"spaceid": "C105",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024366",
+"longitude": "-118.29168"
+}
+},
+"C106": {
+"spaceid": "C106",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02431",
+"longitude": "-118.29168"
+}
+},
+"C107": {
+"spaceid": "C107",
+"blockface": "3501 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024252",
+"longitude": "-118.29168"
+}
+},
+"C108": {
+"spaceid": "C108",
+"blockface": "3501 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023751",
+"longitude": "-118.291681"
+}
+},
+"C109": {
+"spaceid": "C109",
+"blockface": "3501 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023697",
+"longitude": "-118.291681"
+}
+},
+"C110": {
+"spaceid": "C110",
+"blockface": "3501 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02362",
+"longitude": "-118.291681"
+}
+},
+"C111": {
+"spaceid": "C111",
+"blockface": "3501 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023565",
+"longitude": "-118.291681"
+}
+},
+"C112": {
+"spaceid": "C112",
+"blockface": "3501 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02349",
+"longitude": "-118.291682"
+}
+},
+"C1125": {
+"spaceid": "C1125",
+"blockface": "3300 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023988",
+"longitude": "-118.283714"
+}
+},
+"C1126": {
+"spaceid": "C1126",
+"blockface": "3300 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02404",
+"longitude": "-118.283694"
+}
+},
+"C1127": {
+"spaceid": "C1127",
+"blockface": "3300 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024113",
+"longitude": "-118.283671"
+}
+},
+"C113": {
+"spaceid": "C113",
+"blockface": "3501 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023435",
+"longitude": "-118.29168"
+}
+},
+"C1132": {
+"spaceid": "C1132",
+"blockface": "3300 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024429",
+"longitude": "-118.283643"
+}
+},
+"C1133": {
+"spaceid": "C1133",
+"blockface": "3300 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024586",
+"longitude": "-118.283666"
+}
+},
+"C1134": {
+"spaceid": "C1134",
+"blockface": "3300 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024755",
+"longitude": "-118.283695"
+}
+},
+"C1135": {
+"spaceid": "C1135",
+"blockface": "3300 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024828",
+"longitude": "-118.283706"
+}
+},
+"C1136": {
+"spaceid": "C1136",
+"blockface": "3300 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024889",
+"longitude": "-118.283716"
+}
+},
+"C1139": {
+"spaceid": "C1139",
+"blockface": "800 32ND ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025416",
+"longitude": "-118.283612"
+}
+},
+"C1140": {
+"spaceid": "C1140",
+"blockface": "800 32ND ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02541",
+"longitude": "-118.283551"
+}
+},
+"C1141": {
+"spaceid": "C1141",
+"blockface": "800 32ND ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025389",
+"longitude": "-118.283449"
+}
+},
+"C1142": {
+"spaceid": "C1142",
+"blockface": "800 32ND ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025373",
+"longitude": "-118.283398"
+}
+},
+"C1143": {
+"spaceid": "C1143",
+"blockface": "800 32ND ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025342",
+"longitude": "-118.283319"
+}
+},
+"C1144": {
+"spaceid": "C1144",
+"blockface": "800 32ND ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025318",
+"longitude": "-118.283263"
+}
+},
+"C1145": {
+"spaceid": "C1145",
+"blockface": "800 32ND ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025226",
+"longitude": "-118.283059"
+}
+},
+"C1147": {
+"spaceid": "C1147",
+"blockface": "3200 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025779",
+"longitude": "-118.283823"
+}
+},
+"C1148": {
+"spaceid": "C1148",
+"blockface": "3200 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025853",
+"longitude": "-118.283825"
+}
+},
+"C1149": {
+"spaceid": "C1149",
+"blockface": "3200 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.0259",
+"longitude": "-118.283825"
+}
+},
+"C1150": {
+"spaceid": "C1150",
+"blockface": "3200 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025969",
+"longitude": "-118.283827"
+}
+},
+"C1151": {
+"spaceid": "C1151",
+"blockface": "3200 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026024",
+"longitude": "-118.283828"
+}
+},
+"C1152": {
+"spaceid": "C1152",
+"blockface": "3200 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026096",
+"longitude": "-118.283829"
+}
+},
+"C1153": {
+"spaceid": "C1153",
+"blockface": "3100 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026147",
+"longitude": "-118.28383"
+}
+},
+"C116": {
+"spaceid": "C116",
+"blockface": "1101 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023173",
+"longitude": "-118.291871"
+}
+},
+"C116A": {
+"spaceid": "C116A",
+"blockface": "1101 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023171",
+"longitude": "-118.292109"
+}
+},
+"C116B": {
+"spaceid": "C116B",
+"blockface": "1101 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023172",
+"longitude": "-118.292182"
+}
+},
+"C117": {
+"spaceid": "C117",
+"blockface": "1101 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023172",
+"longitude": "-118.292245"
+}
+},
+"C1170": {
+"spaceid": "C1170",
+"blockface": "3101 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026241",
+"longitude": "-118.284106"
+}
+},
+"C1171": {
+"spaceid": "C1171",
+"blockface": "3101 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026182",
+"longitude": "-118.284106"
+}
+},
+"C1172": {
+"spaceid": "C1172",
+"blockface": "3201 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026103",
+"longitude": "-118.284104"
+}
+},
+"C1173": {
+"spaceid": "C1173",
+"blockface": "3201 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026051",
+"longitude": "-118.284103"
+}
+},
+"C1177": {
+"spaceid": "C1177",
+"blockface": "3201 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025792",
+"longitude": "-118.284099"
+}
+},
+"C1178": {
+"spaceid": "C1178",
+"blockface": "3301 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025065",
+"longitude": "-118.284025"
+}
+},
+"C1179": {
+"spaceid": "C1179",
+"blockface": "3301 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02499",
+"longitude": "-118.284013"
+}
+},
+"C118": {
+"spaceid": "C118",
+"blockface": "1101 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023171",
+"longitude": "-118.29235"
+}
+},
+"C1181": {
+"spaceid": "C1181",
+"blockface": "3301 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02486",
+"longitude": "-118.28399"
+}
+},
+"C1182": {
+"spaceid": "C1182",
+"blockface": "3301 HOOVER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024805",
+"longitude": "-118.283981"
+}
+},
+"C1188": {
+"spaceid": "C1188",
+"blockface": "3100 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025503",
+"longitude": "-118.286653"
+}
+},
+"C1189": {
+"spaceid": "C1189",
+"blockface": "3100 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025566",
+"longitude": "-118.286601"
+}
+},
+"C1190": {
+"spaceid": "C1190",
+"blockface": "3100 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025614",
+"longitude": "-118.286561"
+}
+},
+"C1192": {
+"spaceid": "C1192",
+"blockface": "3100 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025718",
+"longitude": "-118.286471"
+}
+},
+"C1193": {
+"spaceid": "C1193",
+"blockface": "3100 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025777",
+"longitude": "-118.286418"
+}
+},
+"C1194": {
+"spaceid": "C1194",
+"blockface": "3100 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025823",
+"longitude": "-118.286378"
+}
+},
+"C1195": {
+"spaceid": "C1195",
+"blockface": "3100 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025885",
+"longitude": "-118.286323"
+}
+},
+"C1196": {
+"spaceid": "C1196",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02593",
+"longitude": "-118.286283"
+}
+},
+"C1197": {
+"spaceid": "C1197",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025989",
+"longitude": "-118.28623"
+}
+},
+"C1197A": {
+"spaceid": "C1197A",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02601",
+"longitude": "-118.28621"
+}
+},
+"C1198": {
+"spaceid": "C1198",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026036",
+"longitude": "-118.286189"
+}
+},
+"C1199": {
+"spaceid": "C1199",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026175",
+"longitude": "-118.286065"
+}
+},
+"C120": {
+"spaceid": "C120",
+"blockface": "1101 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023172",
+"longitude": "-118.292611"
+}
+},
+"C1200": {
+"spaceid": "C1200",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026221",
+"longitude": "-118.286024"
+}
+},
+"C1201": {
+"spaceid": "C1201",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026285",
+"longitude": "-118.285969"
+}
+},
+"C1202": {
+"spaceid": "C1202",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026328",
+"longitude": "-118.285935"
+}
+},
+"C1203": {
+"spaceid": "C1203",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026582",
+"longitude": "-118.285765"
+}
+},
+"C1205": {
+"spaceid": "C1205",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02671",
+"longitude": "-118.285707"
+}
+},
+"C1206": {
+"spaceid": "C1206",
+"blockface": "3000 MCCLINTOCK AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026764",
+"longitude": "-118.285686"
+}
+},
+"C121": {
+"spaceid": "C121",
+"blockface": "1100 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023052",
+"longitude": "-118.2923"
+}
+},
+"C122": {
+"spaceid": "C122",
+"blockface": "1100 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023052",
+"longitude": "-118.292239"
+}
+},
+"C123": {
+"spaceid": "C123",
+"blockface": "1100 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023052",
+"longitude": "-118.292164"
+}
+},
+"C124": {
+"spaceid": "C124",
+"blockface": "1100 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023051",
+"longitude": "-118.292099"
+}
+},
+"C1243": {
+"spaceid": "C1243",
+"blockface": "601 JEFFERSON BLVD",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022354",
+"longitude": "-118.280667"
+}
+},
+"C1244": {
+"spaceid": "C1244",
+"blockface": "601 JEFFERSON BLVD",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022386",
+"longitude": "-118.280738"
+}
+},
+"C1245": {
+"spaceid": "C1245",
+"blockface": "601 JEFFERSON BLVD",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022415",
+"longitude": "-118.280803"
+}
+},
+"C124A": {
+"spaceid": "C124A",
+"blockface": "1100 36TH ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023051",
+"longitude": "-118.29188"
+}
+},
+"C125": {
+"spaceid": "C125",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022868",
+"longitude": "-118.291679"
+}
+},
+"C127": {
+"spaceid": "C127",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022736",
+"longitude": "-118.291679"
+}
+},
+"C1271": {
+"spaceid": "C1271",
+"blockface": "3401 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019879",
+"longitude": "-118.281448"
+}
+},
+"C1272": {
+"spaceid": "C1272",
+"blockface": "3401 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01984",
+"longitude": "-118.281483"
+}
+},
+"C1273": {
+"spaceid": "C1273",
+"blockface": "3401 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019774",
+"longitude": "-118.281523"
+}
+},
+"C1275": {
+"spaceid": "C1275",
+"blockface": "3401 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019548",
+"longitude": "-118.281671"
+}
+},
+"C1276": {
+"spaceid": "C1276",
+"blockface": "3401 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019491",
+"longitude": "-118.281703"
+}
+},
+"C1277": {
+"spaceid": "C1277",
+"blockface": "3401 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019403",
+"longitude": "-118.281758"
+}
+},
+"C1278": {
+"spaceid": "C1278",
+"blockface": "3401 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019344",
+"longitude": "-118.281798"
+}
+},
+"C128": {
+"spaceid": "C128",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022685",
+"longitude": "-118.291678"
+}
+},
+"C129A": {
+"spaceid": "C129A",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.0224",
+"longitude": "-118.29168"
+}
+},
+"C130": {
+"spaceid": "C130",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022334",
+"longitude": "-118.29168"
+}
+},
+"C131": {
+"spaceid": "C131",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02228",
+"longitude": "-118.29168"
+}
+},
+"C133": {
+"spaceid": "C133",
+"blockface": "3651 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021569",
+"longitude": "-118.291672"
+}
+},
+"C135": {
+"spaceid": "C135",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021347",
+"longitude": "-118.291682"
+}
+},
+"C136": {
+"spaceid": "C136",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021293",
+"longitude": "-118.291682"
+}
+},
+"C137": {
+"spaceid": "C137",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021213",
+"longitude": "-118.291682"
+}
+},
+"C138": {
+"spaceid": "C138",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021163",
+"longitude": "-118.291681"
+}
+},
+"C139": {
+"spaceid": "C139",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021087",
+"longitude": "-118.291681"
+}
+},
+"C140": {
+"spaceid": "C140",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020944",
+"longitude": "-118.291681"
+}
+},
+"C141": {
+"spaceid": "C141",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020891",
+"longitude": "-118.29168"
+}
+},
+"C142": {
+"spaceid": "C142",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020814",
+"longitude": "-118.29168"
+}
+},
+"C143": {
+"spaceid": "C143",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020753",
+"longitude": "-118.29168"
+}
+},
+"C144": {
+"spaceid": "C144",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020682",
+"longitude": "-118.29168"
+}
+},
+"C145": {
+"spaceid": "C145",
+"blockface": "3601 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020625",
+"longitude": "-118.291679"
+}
+},
+"C151": {
+"spaceid": "C151",
+"blockface": "3701 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020231",
+"longitude": "-118.291679"
+}
+},
+"C152": {
+"spaceid": "C152",
+"blockface": "3701 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020155",
+"longitude": "-118.291679"
+}
+},
+"C154": {
+"spaceid": "C154",
+"blockface": "3701 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019475",
+"longitude": "-118.29168"
+}
+},
+"C155": {
+"spaceid": "C155",
+"blockface": "3701 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019394",
+"longitude": "-118.291678"
+}
+},
+"C156": {
+"spaceid": "C156",
+"blockface": "3701 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019337",
+"longitude": "-118.291677"
+}
+},
+"C157": {
+"spaceid": "C157",
+"blockface": "3701 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019265",
+"longitude": "-118.291677"
+}
+},
+"C158": {
+"spaceid": "C158",
+"blockface": "3701 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019208",
+"longitude": "-118.291677"
+}
+},
+"C159": {
+"spaceid": "C159",
+"blockface": "3701 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01914",
+"longitude": "-118.291679"
+}
+},
+"C201": {
+"spaceid": "C201",
+"blockface": "1000 39TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.014074",
+"longitude": "-118.292029"
+}
+},
+"C202": {
+"spaceid": "C202",
+"blockface": "1000 39TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.014074",
+"longitude": "-118.291966"
+}
+},
+"C293": {
+"spaceid": "C293",
+"blockface": "3700 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016599",
+"longitude": "-118.281899"
+}
+},
+"C293A": {
+"spaceid": "C293A",
+"blockface": "3700 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016647",
+"longitude": "-118.281862"
+}
+},
+"C294": {
+"spaceid": "C294",
+"blockface": "3700 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016782",
+"longitude": "-118.281756"
+}
+},
+"C295": {
+"spaceid": "C295",
+"blockface": "3700 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01684",
+"longitude": "-118.281711"
+}
+},
+"C379": {
+"spaceid": "C379",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017",
+"longitude": "-118.281837"
+}
+},
+"C379A": {
+"spaceid": "C379A",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016954",
+"longitude": "-118.281872"
+}
+},
+"C379B": {
+"spaceid": "C379B",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016894",
+"longitude": "-118.28192"
+}
+},
+"C379C": {
+"spaceid": "C379C",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016731",
+"longitude": "-118.282047"
+}
+},
+"C380": {
+"spaceid": "C380",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016685",
+"longitude": "-118.282084"
+}
+},
+"C380A": {
+"spaceid": "C380A",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016625",
+"longitude": "-118.282131"
+}
+},
+"C380B": {
+"spaceid": "C380B",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016578",
+"longitude": "-118.282167"
+}
+},
+"C380C": {
+"spaceid": "C380C",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016515",
+"longitude": "-118.282216"
+}
+},
+"C380D": {
+"spaceid": "C380D",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016467",
+"longitude": "-118.282256"
+}
+},
+"C381": {
+"spaceid": "C381",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016413",
+"longitude": "-118.282298"
+}
+},
+"C381A": {
+"spaceid": "C381A",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016362",
+"longitude": "-118.282338"
+}
+},
+"C381B": {
+"spaceid": "C381B",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.016306",
+"longitude": "-118.282381"
+}
+},
+"C381C": {
+"spaceid": "C381C",
+"blockface": "3701 FLOWER ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01626",
+"longitude": "-118.282417"
+}
+},
+"C395": {
+"spaceid": "C395",
+"blockface": "400 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017397",
+"longitude": "-118.282393"
+}
+},
+"C396": {
+"spaceid": "C396",
+"blockface": "400 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017306",
+"longitude": "-118.282189"
+}
+},
+"C397": {
+"spaceid": "C397",
+"blockface": "400 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017278",
+"longitude": "-118.282127"
+}
+},
+"C398": {
+"spaceid": "C398",
+"blockface": "400 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017243",
+"longitude": "-118.282051"
+}
+},
+"C399": {
+"spaceid": "C399",
+"blockface": "400 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01722",
+"longitude": "-118.281996"
+}
+},
+"C400": {
+"spaceid": "C400",
+"blockface": "400 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017186",
+"longitude": "-118.281918"
+}
+},
+"C402": {
+"spaceid": "C402",
+"blockface": "401 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017261",
+"longitude": "-118.281819"
+}
+},
+"C403": {
+"spaceid": "C403",
+"blockface": "401 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017283",
+"longitude": "-118.281868"
+}
+},
+"C404": {
+"spaceid": "C404",
+"blockface": "401 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017316",
+"longitude": "-118.281942"
+}
+},
+"C405": {
+"spaceid": "C405",
+"blockface": "401 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01734",
+"longitude": "-118.281995"
+}
+},
+"C406": {
+"spaceid": "C406",
+"blockface": "401 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017374",
+"longitude": "-118.282073"
+}
+},
+"C407": {
+"spaceid": "C407",
+"blockface": "401 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017397",
+"longitude": "-118.282126"
+}
+},
+"C408": {
+"spaceid": "C408",
+"blockface": "401 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017489",
+"longitude": "-118.282338"
+}
+},
+"C409": {
+"spaceid": "C409",
+"blockface": "401 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017516",
+"longitude": "-118.282395"
+}
+},
+"C410": {
+"spaceid": "C410",
+"blockface": "401 37TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.017552",
+"longitude": "-118.282477"
+}
+},
+"C413": {
+"spaceid": "C413",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019232",
+"longitude": "-118.281538"
+}
+},
+"C414": {
+"spaceid": "C414",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019281",
+"longitude": "-118.281508"
+}
+},
+"C415": {
+"spaceid": "C415",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01935",
+"longitude": "-118.281461"
+}
+},
+"C416": {
+"spaceid": "C416",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019396",
+"longitude": "-118.281433"
+}
+},
+"C417": {
+"spaceid": "C417",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019471",
+"longitude": "-118.281387"
+}
+},
+"C419": {
+"spaceid": "C419",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019583",
+"longitude": "-118.281316"
+}
+},
+"C420": {
+"spaceid": "C420",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01963",
+"longitude": "-118.281284"
+}
+},
+"C421": {
+"spaceid": "C421",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019699",
+"longitude": "-118.281241"
+}
+},
+"C422": {
+"spaceid": "C422",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01975",
+"longitude": "-118.281209"
+}
+},
+"C424": {
+"spaceid": "C424",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019975",
+"longitude": "-118.281064"
+}
+},
+"C426": {
+"spaceid": "C426",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020092",
+"longitude": "-118.28099"
+}
+},
+"C427": {
+"spaceid": "C427",
+"blockface": "3500 FIGUEROA ST",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02014",
+"longitude": "-118.28096"
+}
+},
+"C49": {
+"spaceid": "C49",
+"blockface": "3001 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027127",
+"longitude": "-118.291647"
+}
+},
+"C50": {
+"spaceid": "C50",
+"blockface": "3001 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.027071",
+"longitude": "-118.291646"
+}
+},
+"C51": {
+"spaceid": "C51",
+"blockface": "1301 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026927",
+"longitude": "-118.291826"
+}
+},
+"C52": {
+"spaceid": "C52",
+"blockface": "1301 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026926",
+"longitude": "-118.292034"
+}
+},
+"C53": {
+"spaceid": "C53",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026822",
+"longitude": "-118.29266"
+}
+},
+"C54": {
+"spaceid": "C54",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026822",
+"longitude": "-118.29259"
+}
+},
+"C55": {
+"spaceid": "C55",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026823",
+"longitude": "-118.29248"
+}
+},
+"C56": {
+"spaceid": "C56",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026822",
+"longitude": "-118.292419"
+}
+},
+"C57": {
+"spaceid": "C57",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026823",
+"longitude": "-118.292309"
+}
+},
+"C58": {
+"spaceid": "C58",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026822",
+"longitude": "-118.292245"
+}
+},
+"C59": {
+"spaceid": "C59",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026823",
+"longitude": "-118.292173"
+}
+},
+"C59A": {
+"spaceid": "C59A",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026822",
+"longitude": "-118.292108"
+}
+},
+"C60": {
+"spaceid": "C60",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026822",
+"longitude": "-118.292004"
+}
+},
+"C60A": {
+"spaceid": "C60A",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026823",
+"longitude": "-118.291935"
+}
+},
+"C61": {
+"spaceid": "C61",
+"blockface": "1300 30TH PL",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026822",
+"longitude": "-118.291829"
+}
+},
+"C63": {
+"spaceid": "C63",
+"blockface": "3001 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02663",
+"longitude": "-118.291647"
+}
+},
+"C64": {
+"spaceid": "C64",
+"blockface": "3101 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026187",
+"longitude": "-118.291682"
+}
+},
+"C65": {
+"spaceid": "C65",
+"blockface": "3101 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026133",
+"longitude": "-118.291682"
+}
+},
+"C66": {
+"spaceid": "C66",
+"blockface": "3201 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026062",
+"longitude": "-118.291681"
+}
+},
+"C66A": {
+"spaceid": "C66A",
+"blockface": "3201 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.026011",
+"longitude": "-118.291681"
+}
+},
+"C934": {
+"spaceid": "C934",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.018982",
+"longitude": "-118.291402"
+}
+},
+"C935": {
+"spaceid": "C935",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019055",
+"longitude": "-118.291402"
+}
+},
+"C936": {
+"spaceid": "C936",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.01911",
+"longitude": "-118.291402"
+}
+},
+"C938": {
+"spaceid": "C938",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019243",
+"longitude": "-118.291403"
+}
+},
+"C939": {
+"spaceid": "C939",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019318",
+"longitude": "-118.291405"
+}
+},
+"C940": {
+"spaceid": "C940",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019373",
+"longitude": "-118.291406"
+}
+},
+"C941": {
+"spaceid": "C941",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019449",
+"longitude": "-118.291405"
+}
+},
+"C942": {
+"spaceid": "C942",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019504",
+"longitude": "-118.291405"
+}
+},
+"C944": {
+"spaceid": "C944",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.019632",
+"longitude": "-118.291406"
+}
+},
+"C947": {
+"spaceid": "C947",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020293",
+"longitude": "-118.291401"
+}
+},
+"C948": {
+"spaceid": "C948",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02035",
+"longitude": "-118.291401"
+}
+},
+"C949": {
+"spaceid": "C949",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020423",
+"longitude": "-118.291401"
+}
+},
+"C950": {
+"spaceid": "C950",
+"blockface": "3700 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020478",
+"longitude": "-118.291401"
+}
+},
+"C951": {
+"spaceid": "C951",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020561",
+"longitude": "-118.291402"
+}
+},
+"C952": {
+"spaceid": "C952",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020609",
+"longitude": "-118.291402"
+}
+},
+"C953": {
+"spaceid": "C953",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020683",
+"longitude": "-118.291402"
+}
+},
+"C954": {
+"spaceid": "C954",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020736",
+"longitude": "-118.291402"
+}
+},
+"C955": {
+"spaceid": "C955",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020815",
+"longitude": "-118.291403"
+}
+},
+"C956": {
+"spaceid": "C956",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020873",
+"longitude": "-118.291403"
+}
+},
+"C957": {
+"spaceid": "C957",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020941",
+"longitude": "-118.291404"
+}
+},
+"C958": {
+"spaceid": "C958",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.020993",
+"longitude": "-118.291403"
+}
+},
+"C959": {
+"spaceid": "C959",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021067",
+"longitude": "-118.291403"
+}
+},
+"C96": {
+"spaceid": "C96",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024961",
+"longitude": "-118.291681"
+}
+},
+"C961": {
+"spaceid": "C961",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021246",
+"longitude": "-118.291402"
+}
+},
+"C962": {
+"spaceid": "C962",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02132",
+"longitude": "-118.291402"
+}
+},
+"C963": {
+"spaceid": "C963",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02137",
+"longitude": "-118.291402"
+}
+},
+"C964": {
+"spaceid": "C964",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02145",
+"longitude": "-118.291403"
+}
+},
+"C965": {
+"spaceid": "C965",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021506",
+"longitude": "-118.291404"
+}
+},
+"C966": {
+"spaceid": "C966",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021582",
+"longitude": "-118.291404"
+}
+},
+"C967": {
+"spaceid": "C967",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021634",
+"longitude": "-118.291404"
+}
+},
+"C968": {
+"spaceid": "C968",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02171",
+"longitude": "-118.291404"
+}
+},
+"C969": {
+"spaceid": "C969",
+"blockface": "3650 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.021768",
+"longitude": "-118.291403"
+}
+},
+"C97": {
+"spaceid": "C97",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024895",
+"longitude": "-118.291679"
+}
+},
+"C970": {
+"spaceid": "C970",
+"blockface": "3600 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022511",
+"longitude": "-118.291402"
+}
+},
+"C971": {
+"spaceid": "C971",
+"blockface": "3600 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022569",
+"longitude": "-118.291403"
+}
+},
+"C972": {
+"spaceid": "C972",
+"blockface": "3600 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022646",
+"longitude": "-118.291403"
+}
+},
+"C973": {
+"spaceid": "C973",
+"blockface": "3600 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022701",
+"longitude": "-118.291403"
+}
+},
+"C974": {
+"spaceid": "C974",
+"blockface": "3600 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022774",
+"longitude": "-118.291404"
+}
+},
+"C975": {
+"spaceid": "C975",
+"blockface": "3600 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02283",
+"longitude": "-118.291404"
+}
+},
+"C976": {
+"spaceid": "C976",
+"blockface": "3600 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022902",
+"longitude": "-118.291402"
+}
+},
+"C977": {
+"spaceid": "C977",
+"blockface": "3600 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.022965",
+"longitude": "-118.291402"
+}
+},
+"C978": {
+"spaceid": "C978",
+"blockface": "3500 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023291",
+"longitude": "-118.291404"
+}
+},
+"C979": {
+"spaceid": "C979",
+"blockface": "3500 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023347",
+"longitude": "-118.291404"
+}
+},
+"C98": {
+"spaceid": "C98",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024839",
+"longitude": "-118.291679"
+}
+},
+"C980": {
+"spaceid": "C980",
+"blockface": "3500 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023421",
+"longitude": "-118.291404"
+}
+},
+"C981": {
+"spaceid": "C981",
+"blockface": "3500 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023475",
+"longitude": "-118.291405"
+}
+},
+"C982": {
+"spaceid": "C982",
+"blockface": "3500 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023552",
+"longitude": "-118.291405"
+}
+},
+"C983": {
+"spaceid": "C983",
+"blockface": "3500 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02361",
+"longitude": "-118.291405"
+}
+},
+"C985": {
+"spaceid": "C985",
+"blockface": "3500 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023736",
+"longitude": "-118.291405"
+}
+},
+"C986": {
+"spaceid": "C986",
+"blockface": "3500 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023811",
+"longitude": "-118.291402"
+}
+},
+"C987": {
+"spaceid": "C987",
+"blockface": "3500 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.023865",
+"longitude": "-118.291403"
+}
+},
+"C988": {
+"spaceid": "C988",
+"blockface": "3400 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024448",
+"longitude": "-118.291405"
+}
+},
+"C989": {
+"spaceid": "C989",
+"blockface": "3400 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024504",
+"longitude": "-118.291405"
+}
+},
+"C99": {
+"spaceid": "C99",
+"blockface": "3401 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024766",
+"longitude": "-118.29168"
+}
+},
+"C990": {
+"spaceid": "C990",
+"blockface": "3400 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024582",
+"longitude": "-118.291405"
+}
+},
+"C994": {
+"spaceid": "C994",
+"blockface": "3400 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024839",
+"longitude": "-118.291403"
+}
+},
+"C995": {
+"spaceid": "C995",
+"blockface": "3400 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.024892",
+"longitude": "-118.291403"
+}
+},
+"C996": {
+"spaceid": "C996",
+"blockface": "3400 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.02497",
+"longitude": "-118.291403"
+}
+},
+"C997": {
+"spaceid": "C997",
+"blockface": "3400 VERMONT AVE",
+"timelimit": "2HR",
+"raterange": "$1.50",
+"latlng": {
+"latitude": "34.025045",
+"longitude": "-118.291408"
+}
+}
+}

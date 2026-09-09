@@ -1,0 +1,10 @@
+# Collected data — regenerable from LADOT, and too big for git
+*.csv
+*.sqlite
+*.sqlite-journal
+poll.log
+poll.err
+
+__pycache__/
+*.pyc
+.DS_Store
