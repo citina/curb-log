@@ -1,8 +1,22 @@
 # Curb Log — USC street parking study
 
-Finding out when and where street parking is available within a 10-minute walk
-of the USC Department of Public Safety, using LADOT's open sensor data rather
-than manual observation.
+Finding out when street parking is available on the stretch actually walkable
+from an office near USC DPS, using LADOT's open sensor data rather than manual
+observation.
+
+**Scope (confirmed on a map, 9 Sep 2026): 55 sensored spaces.**
+
+| Cluster | Spaces | Where |
+|---|---:|---|
+| `VERMONT AVE 36xx` | 44 | Vermont, West 36th St down to ~37th St, both sides |
+| `36TH ST 11xx` | 11 | West 36th St just west of Vermont, by the park |
+
+Vermont 37xx sits south of 37th Place and was rejected as too far to walk, as
+were the other ten metered streets in the area. Beyond this stretch the
+fallback is free (unmetered) street parking, which has no sensors — so "how
+often is this stretch empty" matters as much as "how many spaces are free".
+`map_spaces.py` redraws the coverage map; block-face numbers are unreadable as
+geography and caused a scoping mistake before the map existed.
 
 ## Data sources (data.lacity.org)
 
@@ -27,6 +41,7 @@ term-time history exists. That is why `poll_live.py` exists.
 ./poll_live.py --ids sensored_ids.txt --collector laptop # one snapshot
 ./install_poller.sh                                      # that, every 5 min, via launchd
 ./patterns.py                                            # weekday x hour, by walkable cluster
+./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx"  # coverage map
 ./analyze.py --csv usc_may_jun.csv                       # same, for archive CSVs
 ```
 
@@ -58,6 +73,10 @@ to `tools/data/ci/`. The launchd job polls the same endpoint into
 runs GitHub drops. Separate directories are load-bearing: sharing one file made
 every `git pull` conflict with the laptop's in-progress writes.
 `patterns.py` reads both.
+
+Both collectors are gated to **weekdays 8am-6pm America/Los_Angeles** — the
+window actually parked in. This deliberately gives up the pre-8am fill-up curve
+and any weekend baseline.
 
 Laptop polling stops while the Mac sleeps, and that missingness is **not
 random** — it tracks the working day, so it thins exactly the busy hours.
