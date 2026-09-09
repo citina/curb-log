@@ -22,18 +22,46 @@ term-time history exists. That is why `poll_live.py` exists.
 ## Tools
 
 ```
-./find_spaces.py --near 34.0206,-118.2890 --radius 800    # which spaces, and which are sensored
-./fetch_history.py --ids sensored_ids.txt --last 2        # stream monthly archives, keep only ours
-./poll_live.py --ids sensored_ids.txt --db occupancy.sqlite    # one poll
-./install_poller.sh                                       # run that every 10 min via launchd
-./analyze.py --db occupancy.sqlite                        # weekday x hour vacancy
+./find_spaces.py --near 34.0206,-118.2890 --radius 800   # which spaces, and which are sensored
+./fetch_history.py --ids sensored_ids.txt --last 2       # stream monthly archives, keep only ours
+./poll_live.py --ids sensored_ids.txt --collector laptop # one snapshot
+./install_poller.sh                                      # that, every 5 min, via launchd
+./patterns.py                                            # weekday x hour, by walkable cluster
+./analyze.py --csv usc_may_jun.csv                       # same, for archive CSVs
 ```
 
-`analyze.py` reconstructs each sensor's state as a step function — the feed
-reports transitions, not snapshots — and samples it on a fixed grid. Sensors
-silent longer than `--stale-hours` are treated as unknown rather than assumed
-unchanged. Median gap between events is 6 minutes and only 0.53% exceed 24h, so
-the default cutoff barely moves results (Tue 11am: 33% at 24h vs 33% at 30 days).
+### Why snapshots, not an event log
+
+The feed reports each space's last transition, so storing transitions and
+rebuilding a step function looks like the richer choice. Measured against the
+June 2026 archive it isn't: a 10-minute poller sees only **59%** of real
+transitions, and the ones it misses are short episodes, so any dwell-time
+answer would be biased long. Sampling the state instead is provably adequate —
+5-minute sampling recovers hourly vacancy to **0.33pp** (mean bias -0.002pp):
+
+| cadence | max hourly error | mean bias |
+|---|---|---|
+| 5 min | 0.33 pp | -0.002 pp |
+| 10 min | 0.72 pp | -0.027 pp |
+| 15 min | 0.99 pp | -0.024 pp |
+| 30 min | 2.49 pp | -0.122 pp |
+| 60 min | 5.09 pp | -0.227 pp |
+
+So the poller appends one line per poll — `polled_at_utc,states`, one character
+per space — and the event log was dropped rather than shipped with a known bias.
+
+### Two collectors
+
+`.github/workflows/poll.yml` polls every 5 minutes on GitHub Actions and commits
+to `tools/data/ci/`. The launchd job polls the same endpoint into
+`tools/data/laptop/`, which is gitignored — it is supplementary coverage for
+runs GitHub drops. Separate directories are load-bearing: sharing one file made
+every `git pull` conflict with the laptop's in-progress writes.
+`patterns.py` reads both.
+
+Laptop polling stops while the Mac sleeps, and that missingness is **not
+random** — it tracks the working day, so it thins exactly the busy hours.
+That is why CI exists and why polls-per-cell is printed with every result.
 
 ## Caveats found the hard way
 
@@ -43,6 +71,9 @@ the default cutoff barely moves results (Tue 11am: 33% at 24h vs 33% at 30 days)
 - **LADOT block faces are not walkable units.** Vermont between 36th and 38th is
   six separate block faces (77 metered spaces, 65 sensored) that the parking app
   shows as one location. Analyse clusters, not block faces.
+- **LADOT block faces are not decision units** (again): `patterns.py` clusters
+  both sides of a hundred-block, so Vermont 36xx is the 44 spaces across
+  3600/3601/3650/3651 that the app shows as one place.
 - `curb-log.html` is a manual tracker, now a fallback: it captures max payable
   duration and the unsensored blocks (Jefferson Blvd, most of Figueroa), neither
   of which appear in the sensor feed.
