@@ -17,10 +17,10 @@ cat > "$PLIST" <<PLISTEOF
     <string>/Users/liangshiting/opt/anaconda3/bin/python3</string>
     <string>$DIR/poll_live.py</string>
     <string>--ids</string><string>$DIR/sensored_ids.txt</string>
-    <string>--db</string><string>$DIR/occupancy.sqlite</string>
+    <string>--data-dir</string><string>$DIR/data</string>
   </array>
   <key>WorkingDirectory</key><string>$DIR</string>
-  <key>StartInterval</key><integer>600</integer>
+  <key>StartInterval</key><integer>300</integer>
   <key>RunAtLoad</key><true/>
   <key>StandardOutPath</key><string>$DIR/poll.log</string>
   <key>StandardErrorPath</key><string>$DIR/poll.err</string>
@@ -30,7 +30,7 @@ PLISTEOF
 
 launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$PLIST"
-echo "Installed $LABEL — polling every 10 minutes."
+echo "Installed $LABEL — polling every 5 minutes."
 echo "  status:    launchctl list | grep $LABEL"
 echo "  log:       tail -f $DIR/poll.log"
 echo "  stop:      launchctl bootout gui/$(id -u)/$LABEL"

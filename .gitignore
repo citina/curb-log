@@ -1,10 +1,15 @@
-# Collected data — regenerable from LADOT, and too big for git
-*.csv
+# Bulk archive pulls — 200-300MB each, regenerable via fetch_history.py
+tools/usc_*.csv
 *.sqlite
 *.sqlite-journal
-poll.log
-poll.err
+
+# Local runtime noise
+tools/poll.log
+tools/poll.err
+tools/data/failures.log
 
 __pycache__/
 *.pyc
 .DS_Store
+
+# tools/data/*.csv IS tracked — it is the collected dataset
