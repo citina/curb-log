@@ -68,12 +68,11 @@ That is why CI exists and why polls-per-cell is printed with every result.
 - **Summer data does not transfer.** 3601 Vermont read 49% free at midday in
   June; on a September teaching day it read 6%. Only term-time data can answer
   the question.
-- **LADOT block faces are not walkable units.** Vermont between 36th and 38th is
+- **LADOT block faces are not decision units.** Vermont between 36th and 38th is
   six separate block faces (77 metered spaces, 65 sensored) that the parking app
-  shows as one location. Analyse clusters, not block faces.
-- **LADOT block faces are not decision units** (again): `patterns.py` clusters
-  both sides of a hundred-block, so Vermont 36xx is the 44 spaces across
-  3600/3601/3650/3651 that the app shows as one place.
+  shows as one location, and that you drive as one stretch. `patterns.py`
+  therefore clusters both sides of a hundred-block: Vermont 36xx is the 44
+  sensored spaces across 3600/3601/3650/3651.
 - `curb-log.html` is a manual tracker, now a fallback: it captures max payable
   duration and the unsensored blocks (Jefferson Blvd, most of Figueroa), neither
   of which appear in the sensor feed.
