@@ -26,7 +26,10 @@ Each collector writes its own subdirectory (data/<collector>/YYYY-MM-DD.csv).
 The laptop poller and the CI cron would otherwise append to the same tracked
 file and conflict on every pull; separate paths merge by construction.
 """
-import argparse, hashlib, json, os, sys, time, urllib.parse, urllib.request
+import argparse, datetime as dt, hashlib, json, os, sys, time, urllib.parse, urllib.request
+from zoneinfo import ZoneInfo
+
+LA = ZoneInfo("America/Los_Angeles")
 
 LIVE = "https://data.lacity.org/resource/e7h6-4a3e.json"
 
@@ -51,7 +54,20 @@ def main():
     p.add_argument("--data-dir", default="data")
     p.add_argument("--collector", default="laptop", help="who is polling; names the subdirectory")
     p.add_argument("--token", help="optional Socrata app token")
+    p.add_argument("--only-hours", help="collect only within this local window, e.g. 8-18")
+    p.add_argument("--only-weekdays", action="store_true", help="skip Saturday and Sunday")
     a = p.parse_args()
+
+    # Gate on LOS ANGELES local time, not UTC, so the window holds across DST.
+    now_la = dt.datetime.now(LA)
+    if a.only_weekdays and now_la.weekday() >= 5:
+        print(f"{now_la:%Y-%m-%d %H:%M %Z}: weekend, not collecting")
+        return 0
+    if a.only_hours:
+        lo, hi = (int(x) for x in a.only_hours.split("-"))
+        if not (lo <= now_la.hour < hi):
+            print(f"{now_la:%Y-%m-%d %H:%M %Z}: outside {lo}-{hi}, not collecting")
+            return 0
 
     ids = [l.strip() for l in open(a.ids) if l.strip()]
     out_dir = os.path.join(a.data_dir, a.collector)

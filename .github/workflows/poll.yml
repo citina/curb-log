@@ -5,7 +5,9 @@ name: poll parking occupancy
 # coverage — patterns.py reports polls-per-cell precisely because of that.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    # 8am-6pm Los Angeles, Mon-Fri. The UTC range covers both PDT and PST;
+    # poll_live.py does the exact local-time gate.
+    - cron: "*/5 14-23,0-2 * * 1-6"
   workflow_dispatch:
 
 # Never let two runs push at once.
@@ -26,7 +28,7 @@ jobs:
 
       - name: Poll LADOT
         working-directory: tools
-        run: python3 poll_live.py --ids sensored_ids.txt --data-dir data --collector ci
+        run: python3 poll_live.py --ids sensored_ids.txt --data-dir data --collector ci --only-hours 8-18 --only-weekdays
 
       - name: Commit the snapshot
         run: |

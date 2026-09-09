@@ -19,14 +19,18 @@ that missingness is not random -- it tracks your day -- so a cell with few polls
 must be read as "not measured", never as "quiet".
 """
 import argparse, collections, csv, datetime as dt, glob, json, os, re, sys
+from zoneinfo import ZoneInfo
 
 DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-PDT_MONTHS = range(3, 12)      # LA is UTC-7 Mar-Nov, UTC-8 otherwise
+LA = ZoneInfo("America/Los_Angeles")
 
 
 def local(ts):
-    t = dt.datetime.fromisoformat(ts)
-    return t - dt.timedelta(hours=7 if t.month in PDT_MONTHS else 8)
+    """Stored timestamps are UTC; report in LA local time, DST included."""
+    return (dt.datetime.fromisoformat(ts)
+            .replace(tzinfo=dt.timezone.utc)
+            .astimezone(LA)
+            .replace(tzinfo=None))
 
 
 def cluster_of(blockface):
