@@ -44,7 +44,10 @@ def load(data_dir):
     ids = [l.strip() for l in open(order_path) if l.strip() and not l.startswith("#")]
 
     rows = []
-    for path in sorted(glob.glob(os.path.join(data_dir, "*.csv"))):
+    # every collector's subdirectory, plus any files left at the top level
+    paths = glob.glob(os.path.join(data_dir, "*.csv")) + \
+            glob.glob(os.path.join(data_dir, "*", "*.csv"))
+    for path in sorted(paths):
         with open(path, newline="") as f:
             for r in csv.DictReader(f):
                 rows.append((local(r["polled_at_utc"]), r["states"]))

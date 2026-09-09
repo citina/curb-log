@@ -20,7 +20,11 @@ order file: V vacant, O occupied, ? not reported this poll. ~270 bytes a poll,
 so a month is a couple of MB -- small enough to commit from CI, and trivially
 mergeable across collectors (concatenate; each line stands alone).
 
-  ./poll_live.py --ids sensored_ids.txt --data-dir data
+  ./poll_live.py --ids sensored_ids.txt --collector laptop
+
+Each collector writes its own subdirectory (data/<collector>/YYYY-MM-DD.csv).
+The laptop poller and the CI cron would otherwise append to the same tracked
+file and conflict on every pull; separate paths merge by construction.
 """
 import argparse, hashlib, json, os, sys, time, urllib.parse, urllib.request
 
@@ -45,11 +49,13 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--ids", default="sensored_ids.txt")
     p.add_argument("--data-dir", default="data")
+    p.add_argument("--collector", default="laptop", help="who is polling; names the subdirectory")
     p.add_argument("--token", help="optional Socrata app token")
     a = p.parse_args()
 
     ids = [l.strip() for l in open(a.ids) if l.strip()]
-    os.makedirs(a.data_dir, exist_ok=True)
+    out_dir = os.path.join(a.data_dir, a.collector)
+    os.makedirs(out_dir, exist_ok=True)
 
     # Pin the column order. If the space list ever changes, past files stay
     # readable because each one records the order it was written against.
@@ -70,7 +76,7 @@ def main():
     try:
         states = fetch(ids, a.token)
     except Exception as e:
-        with open(os.path.join(a.data_dir, "failures.log"), "a") as f:
+        with open(os.path.join(out_dir, "failures.log"), "a") as f:
             f.write(f"{now}\t{str(e)[:200]}\n")
         print(f"{now} poll failed: {e}", file=sys.stderr)
         return 1
@@ -78,7 +84,7 @@ def main():
     line = "".join("V" if states.get(s) == "VACANT" else
                    "O" if states.get(s) == "OCCUPIED" else "?" for s in ids)
 
-    path = os.path.join(a.data_dir, f"{day}.csv")
+    path = os.path.join(out_dir, f"{day}.csv")
     new = not os.path.exists(path)
     with open(path, "a") as f:
         if new:

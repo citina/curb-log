@@ -12,4 +12,7 @@ __pycache__/
 *.pyc
 .DS_Store
 
-# tools/data/*.csv IS tracked — it is the collected dataset
+# CI's snapshots are the committed dataset (tools/data/ci/).
+# The laptop collector is local supplementary coverage — untracked, so pulls
+# never conflict with the every-5-minute CI commits. patterns.py reads both.
+tools/data/laptop/

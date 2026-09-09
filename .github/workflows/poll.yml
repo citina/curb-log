@@ -26,13 +26,13 @@ jobs:
 
       - name: Poll LADOT
         working-directory: tools
-        run: python3 poll_live.py --ids sensored_ids.txt --data-dir data
+        run: python3 poll_live.py --ids sensored_ids.txt --data-dir data --collector ci
 
       - name: Commit the snapshot
         run: |
           git config user.name  "curb-log bot"
           git config user.email "noreply@github.com"
-          git add tools/data
+          git add tools/data/ci
           if git diff --cached --quiet; then
             echo "nothing new"; exit 0
           fi
