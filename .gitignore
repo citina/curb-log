@@ -16,3 +16,8 @@ __pycache__/
 # The laptop collector is local supplementary coverage — untracked, so pulls
 # never conflict with the every-5-minute CI commits. patterns.py reads both.
 tools/data/laptop/
+
+# Superseded wide-area collection, kept locally in case the scope widens again
+data_wide_backup/
+tools/coverage.png
+tools/.tilecache/
