@@ -21,3 +21,6 @@ tools/coverage.png
 tools/.tilecache/
 
 # Both collectors' snapshots (tools/data/ci/, tools/data/laptop/) are tracked.
+
+# Session handoff notes — local only
+handoff/
