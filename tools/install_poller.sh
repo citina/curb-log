@@ -48,7 +48,10 @@ cat > "$PUB_PLIST" <<PLISTEOF
 <dict>
   <key>Label</key><string>$PUB_LABEL</string>
   <key>ProgramArguments</key>
-  <array><string>/bin/bash</string><string>$DIR/publish.sh</string></array>
+  <!-- Python, not bash: macOS charges file access to the launched program, and
+       /bin/bash may not touch ~/Desktop. This interpreter (the poller's) can. -->
+  <array><string>/Users/liangshiting/opt/anaconda3/bin/python3</string><string>$DIR/publish.py</string></array>
+  <key>WorkingDirectory</key><string>$DIR</string>
   <key>StartInterval</key><integer>1800</integer>
   <key>EnvironmentVariables</key>
   <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string></dict>

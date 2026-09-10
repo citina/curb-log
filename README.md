@@ -42,7 +42,7 @@ term-time history exists. That is why `poll_live.py` exists.
 ./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx" # coverage map
 ./poll_live.py --ids sensored_ids.txt --collector laptop   # one snapshot
 ./install_poller.sh                                        # laptop poller (5 min) + publisher (30 min)
-./publish.sh                                               # what the publisher runs
+./publish.py                                               # what the publisher runs
 ```
 
 ### How "spaces free" is computed
@@ -93,7 +93,7 @@ per space — and the event log was dropped rather than shipped with a known bia
 
 **The laptop is the real collector.** `install_poller.sh` installs two launchd
 jobs: the poller (every 5 minutes, weekdays 8am-5pm Los Angeles, into
-`tools/data/laptop/`) and the publisher (`publish.sh`, every 30 minutes), which
+`tools/data/laptop/`) and the publisher (`publish.py`, every 30 minutes), which
 pulls, rebuilds `docs/data.json`, and pushes. It is the only thing that rewrites
 the page's data; commits are pathspec-limited so nothing else in the working
 copy is swept up, and `data_through` is stamped from the newest data rather than
@@ -136,6 +136,12 @@ November); August's file cannot validate anything.
 
 ## Caveats found the hard way
 
+- **launchd, ~/Desktop, and whose permission it is.** macOS charges a launchd job's
+  file access to the program it launches. `/bin/bash` may not touch `~/Desktop`,
+  so a shell-script publisher died before running a line — exit 78 (EX_CONFIG),
+  no output, nothing in its log. Both jobs therefore run under the Anaconda
+  Python, which has that access. If a job ever goes silent with exit 78, check
+  this first.
 - **A cron is not a clock on GitHub.** The 5-minute schedule fired three times in
   nineteen hours; the laptop, dismissed as redundant, had been doing the work.
 - **Summer data does not transfer.** 3601 Vermont read 49% free at midday in
