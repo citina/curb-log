@@ -159,12 +159,27 @@ def main():
             print("\nToo few polls to mean anything yet — this is a plumbing check, not a finding.")
 
     if a.json:
+        def centroid(c):
+            ps = [meta[ids[i]]["latlng"] for i in idx[c] if meta.get(ids[i], {}).get("latlng")]
+            if not ps:
+                return None
+            return [sum(float(q["latitude"]) for q in ps) / len(ps),
+                    sum(float(q["longitude"]) for q in ps) / len(ps)]
         payload = {
-            "generated": dt.datetime.now().isoformat(timespec="seconds"),
+            "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
             "span": [rows[0][0].isoformat(), rows[-1][0].isoformat()],
             "n_polls": len(rows),
-            "clusters": {c: {"n_spaces": len(idx[c])} for c in clusters},
-            "cells": {f"{c}|{d}|{h}": {"polls": v[0], "sum_free": v[1], "zero": v[2]}
+            "stale_share": round(stale_obs / total_obs, 4) if total_obs else 0,
+            "days_covered": len({r[0].date().isoformat() for r in rows}),
+            "window_start": h0,
+            "window_end": h1,
+            "clusters": {c: {"n_spaces": len(idx[c]),
+                             "spaces": [ids[i] for i in idx[c]],
+                             "centroid": centroid(c),
+                             "blockfaces": sorted({meta.get(ids[i], {}).get("blockface", "?")
+                                                   for i in idx[c]})}
+                         for c in clusters},
+            "cells": {f"{c}|{d}|{h}": [v[0], v[1], v[2]]
                       for (c, d, h), v in agg.items()},
         }
         json.dump(payload, open(a.json, "w"), indent=1)

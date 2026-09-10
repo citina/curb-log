@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curb Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root {
+    color-scheme: light;
+    --plane:#f2f2ef; --surface:#fcfcfb; --well:#e8e8e2;
+    --ink:#14140f; --ink-2:#56554f; --ink-3:#8a8880;
+    --rule:#e1e0d9; --edge:#c9c8c0;
+    --accent:#2a78d6; --accent-ink:#1c5cab; --accent-wash:#e8f1fd;
+    --panel:#1a1a19; --panel-ink:#fcfcfb; --panel-ink-2:#b6b5ab;
+    --good:#0ca30c; --warn:#b8791a; --critical:#d03b3b;
+    --heat-0:#0d366b; --heat-0-ink:#fff;
+    --heat-1:#1c5cab; --heat-1-ink:#fff;
+    --heat-2:#2a78d6; --heat-2-ink:#fff;
+    --heat-3:#6da7ec; --heat-3-ink:#0b0b0b;
+    --heat-4:#9ec5f4; --heat-4-ink:#0b0b0b;
+    --heat-5:#cde2fb; --heat-5-ink:#0b0b0b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --plane:#0d0d0d; --surface:#1a1a19; --well:#232322;
+      --ink:#fff; --ink-2:#c3c2b7; --ink-3:#898781;
+      --rule:#2c2c2a; --edge:#383835;
+      --accent:#3987e5; --accent-ink:#86b6ef; --accent-wash:#16243a;
+      --panel:#262625; --panel-ink:#fff; --panel-ink-2:#a9a89e;
+      --good:#0ca30c; --warn:#d9a441; --critical:#e66767;
+      --heat-0:#cde2fb; --heat-0-ink:#0b0b0b;
+      --heat-1:#9ec5f4; --heat-1-ink:#0b0b0b;
+      --heat-2:#6da7ec; --heat-2-ink:#0b0b0b;
+      --heat-3:#3987e5; --heat-3-ink:#fff;
+      --heat-4:#256abf; --heat-4-ink:#fff;
+      --heat-5:#184f95; --heat-5-ink:#fff;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--plane);color:var(--ink);
+       font-family:"Barlow",system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.45;
+       -webkit-font-smoothing:antialiased}
+  img{max-width:100%}
+  .wrap{max-width:760px;margin-inline:auto;padding:0 14px 60px}
+  .masthead{display:flex;align-items:baseline;gap:10px;padding:20px 2px 12px}
+  .masthead h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em}
+  .masthead .sub{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);
+                 text-transform:uppercase;letter-spacing:.08em}
+  .nav{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:repeat(2,1fr);
+       gap:2px;padding:6px;margin-bottom:16px;background:var(--well);border-radius:10px;
+       box-shadow:0 6px 18px -12px rgba(0,0,0,.5)}
+  .nav button{appearance:none;border:0;cursor:pointer;background:transparent;color:var(--ink-2);
+              font-family:inherit;font-size:14px;font-weight:600;padding:9px 4px;border-radius:7px;min-height:40px}
+  .nav button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:16px;margin-bottom:14px}
+  .card>h2{margin:0 0 3px;font-size:15px;font-weight:600}
+  .card>.hint{margin:0 0 14px;font-size:13px;color:var(--ink-2);max-width:62ch}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:10px;font-weight:500;color:var(--ink-3);
+           text-transform:uppercase;letter-spacing:.1em;margin:0 0 8px}
+  .verdict{background:var(--panel);color:var(--panel-ink);border-radius:12px;padding:20px 18px;margin-bottom:14px}
+  .verdict .when{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;
+                 text-transform:uppercase;color:var(--panel-ink-2);margin-bottom:10px}
+  .verdict .headline{font-size:29px;font-weight:700;line-height:1.12;letter-spacing:-.02em;
+                     margin-bottom:8px;text-wrap:balance}
+  .verdict .basis{font-size:13px;color:var(--panel-ink-2);max-width:56ch}
+  .verdict .rows{margin-top:14px;border-top:1px solid rgba(255,255,255,.14);padding-top:12px;
+                 display:grid;gap:8px}
+  .vrow{display:flex;align-items:baseline;gap:10px;font-size:13px}
+  .vrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--panel-ink)}
+  .vrow .big{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;color:var(--panel-ink)}
+  .vrow .cmp{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--panel-ink-2);width:118px;text-align:right}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:1px;background:var(--rule);
+         border:1px solid var(--rule);border-radius:12px;overflow:hidden;margin-bottom:14px}
+  .stat{background:var(--surface);padding:12px 13px}
+  .stat .v{font-family:"IBM Plex Mono",monospace;font-size:20px;font-weight:600}
+  .stat .k{font-size:11.5px;color:var(--ink-2);margin-top:1px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{appearance:none;cursor:pointer;font-family:"Barlow",sans-serif;font-size:13.5px;
+        min-height:40px;padding:0 12px;background:var(--surface);color:var(--ink-2);
+        border:1px solid var(--edge);border-radius:9px}
+  .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+  .grid-scroll{overflow-x:auto;padding-bottom:4px}
+  .heat{display:grid;gap:2px;min-width:440px}
+  .heat .hcol,.heat .hrow{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);
+                          display:flex;align-items:center}
+  .heat .hcol{justify-content:center;padding-bottom:3px}
+  .heat .hrow{justify-content:flex-start;padding-right:6px}
+  .cell{height:30px;border-radius:3px;font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;
+        display:flex;align-items:center;justify-content:center;background:transparent;color:var(--ink-3);
+        border:0;padding:0;cursor:default}
+  .cell.empty{border:1px dashed var(--edge);font-size:12px}
+  .cell.now{box-shadow:0 0 0 2px var(--ink)}
+  .cell.h0{background:var(--heat-0);color:var(--heat-0-ink)}
+  .cell.h1{background:var(--heat-1);color:var(--heat-1-ink)}
+  .cell.h2{background:var(--heat-2);color:var(--heat-2-ink)}
+  .cell.h3{background:var(--heat-3);color:var(--heat-3-ink)}
+  .cell.h4{background:var(--heat-4);color:var(--heat-4-ink)}
+  .cell.h5{background:var(--heat-5);color:var(--heat-5-ink)}
+  .legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;
+          font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-2)}
+  .legend .sw{width:26px;height:13px;border-radius:2px}
+  .legend .swatches{display:flex;gap:2px}
+  .field{margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+  .label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
+  .label .name{font-size:13px;font-weight:600}
+  .label .aside{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
+  input[type=number],input[type=date]{width:100%;font-family:inherit;font-size:15px;background:var(--surface);
+    color:var(--ink);border:1px solid var(--edge);border-radius:9px;padding:9px 11px;min-height:42px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .blockrow{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--rule)}
+  .blockrow:last-child{border-bottom:0}
+  .blockrow input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent);flex:none}
+  .blockrow .nm{font-weight:600;font-size:14px}
+  .blockrow .de{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-2);margin-top:2px}
+  .btn{appearance:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;min-height:44px;
+       padding:0 16px;border-radius:10px;background:var(--accent);color:#fff;border:1px solid var(--accent)}
+  .btn.secondary{background:var(--surface);color:var(--ink);border-color:var(--edge);font-weight:500}
+  .btn:focus-visible,.chip:focus-visible,input:focus-visible,.nav button:focus-visible{
+       outline:2px solid var(--accent);outline-offset:2px}
+  pre.cfg{background:var(--well);border-radius:9px;padding:12px;overflow-x:auto;
+          font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.55;margin:12px 0 0}
+  .banner{display:flex;gap:10px;align-items:flex-start;background:var(--accent-wash);
+          border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);border-radius:10px;
+          padding:11px 13px;margin-bottom:14px;font-size:13px}
+  .banner .dot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:6px}
+  .banner.warn{background:color-mix(in srgb,var(--warn) 12%,transparent);
+               border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
+  .banner.warn .dot{background:var(--warn)}
+  .foot{font-size:12px;color:var(--ink-3);text-align:center;padding:6px 0 0;line-height:1.6}
+  .foot a{color:var(--ink-2)}
+  [hidden]{display:none!important}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  @media (max-width:420px){.verdict .headline{font-size:24px}.vrow .cmp{width:96px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <h1>Curb Log</h1>
+    <span class="sub" id="sub">USC · street parking</span>
+  </header>
+
+  <nav class="nav" role="tablist">
+    <button role="tab" data-view="basis" aria-selected="false">1 · Basis</button>
+    <button role="tab" data-view="pattern" aria-selected="true">2 · Pattern</button>
+  </nav>
+
+  <main id="view"></main>
+
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+"use strict";
+
+var DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+var LIVE = "https://data.lacity.org/resource/e7h6-4a3e.json";
+var LS = "curblog.basis.v1";
+
+var S = {
+  view: "pattern",
+  data: null,        // data.json, published by CI
+  live: null,        // {cluster: {free, occ, stale, unknown, total, newestAgeMin}}
+  liveErr: null,
+  liveAt: null,
+  basis: null,       // the user's edited basis (local until applied)
+  predDow: null,
+  predHour: null
+};
+
+function el(t, c, h) { var e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; }
+function hourLabel(h) { return (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? "a" : "p"); }
+function fmt1(n) { return (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, ""); }
+
+/* LA local time, wherever the phone happens to be */
+function laNow() {
+  var s = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+  return new Date(s);
+}
+function laDow() { var d = laNow().getDay(); return (d + 6) % 7; }   // 0 = Monday
+
+/* ---------- cells ---------- */
+function cell(cluster, dow, hour) {
+  var v = S.data && S.data.cells[cluster + "|" + dow + "|" + hour];
+  if (!v) return null;
+  return { polls: v[0], meanFree: v[1] / v[0], zeroShare: v[2] / v[0] };
+}
+function heatClass(share) {
+  if (share < 0.03) return "h0";
+  if (share < 0.08) return "h1";
+  if (share < 0.15) return "h2";
+  if (share < 0.25) return "h3";
+  if (share < 0.40) return "h4";
+  return "h5";
+}
+
+/* ---------- live ---------- */
+function allSpaces() {
+  var out = [];
+  Object.keys(S.data.clusters).forEach(function (c) {
+    out = out.concat(S.data.clusters[c].spaces);
+  });
+  return out;
+}
+
+function fetchLive() {
+  if (!S.data) return Promise.resolve();
+  var ids = allSpaces();
+  var where = "spaceid in (" + ids.map(function (s) { return "'" + s + "'"; }).join(",") + ")";
+  var url = LIVE + "?$where=" + encodeURIComponent(where) + "&$limit=5000";
+  return fetch(url, { cache: "no-store" })
+    .then(function (r) { if (!r.ok) throw new Error("LADOT returned " + r.status); return r.json(); })
+    .then(function (rows) {
+      var by = {};
+      rows.forEach(function (r) { by[r.spaceid] = r; });
+      var now = Date.now(), out = {};
+      Object.keys(S.data.clusters).forEach(function (c) {
+        var o = { free: 0, occ: 0, stale: 0, unknown: 0, total: 0, newest: Infinity };
+        S.data.clusters[c].spaces.forEach(function (sid) {
+          var r = by[sid];
+          o.total++;
+          if (!r) { o.unknown++; return; }
+          var ageMin = (now - Date.parse(r.eventtime + "Z")) / 60000;
+          if (ageMin < o.newest) o.newest = ageMin;
+          if (ageMin > 24 * 60) o.stale++;
+          if (r.occupancystate === "VACANT") o.free++;
+          else if (r.occupancystate === "OCCUPIED") o.occ++;
+          else o.unknown++;
+        });
+        out[c] = o;
+      });
+      S.live = out; S.liveErr = null; S.liveAt = new Date();
+    })
+    .catch(function (e) { S.liveErr = e.message || String(e); });
+}
+
+/* ---------- basis ---------- */
+function defaultBasis() {
+  var cs = {};
+  Object.keys(S.data.clusters).forEach(function (c) { cs[c] = true; });
+  return { clusters: cs, hourStart: 8, hourEnd: 17, weekdaysOnly: true, until: "" };
+}
+function loadBasis() {
+  try { var v = JSON.parse(localStorage.getItem(LS)); if (v && v.clusters) return v; } catch (e) {}
+  return null;
+}
+function saveBasis() { try { localStorage.setItem(LS, JSON.stringify(S.basis)); } catch (e) {} }
+
+/* The page cannot reach the collectors, so an edit here is a request, not an
+   act. Dirty state is shown plainly rather than pretending it took effect. */
+function basisDirty() {
+  var d = defaultBasis();
+  if (S.basis.hourStart !== d.hourStart || S.basis.hourEnd !== d.hourEnd) return true;
+  if (S.basis.weekdaysOnly !== d.weekdaysOnly) return true;
+  if (S.basis.until) return true;
+  return Object.keys(d.clusters).some(function (c) { return !S.basis.clusters[c]; });
+}
+
+/* ================= render ================= */
+function render() {
+  document.querySelectorAll(".nav button").forEach(function (b) {
+    b.setAttribute("aria-selected", b.dataset.view === S.view ? "true" : "false");
+  });
+  var host = document.getElementById("view");
+  host.innerHTML = "";
+  if (!S.data) { host.appendChild(el("div", "card", "<p class='hint'>Loading collected data…</p>")); return; }
+  host.appendChild(S.view === "basis" ? viewBasis() : viewPattern());
+
+  var d = S.data;
+  document.getElementById("sub").textContent =
+    d.n_polls.toLocaleString() + " polls · " + d.days_covered + (d.days_covered === 1 ? " day" : " days");
+  document.getElementById("foot").innerHTML =
+    "Sensor data from LADOT via <a href='https://data.lacity.org/Transportation/LADOT-Parking-Meter-Occupancy/e7h6-4a3e'>data.lacity.org</a>" +
+    " · collected every 5 min · <a href='https://github.com/citina/curb-log'>source</a>";
+}
+
+/* ---------------- Part 2: pattern & prediction ---------------- */
+function viewPattern() {
+  var f = document.createDocumentFragment();
+  f.appendChild(verdict());
+
+  var d = S.data;
+  var st = el("div", "stats");
+  addStat(st, d.n_polls.toLocaleString(), "polls collected");
+  addStat(st, d.days_covered, d.days_covered === 1 ? "weekday covered" : "weekdays covered");
+  addStat(st, Object.keys(d.clusters).reduce(function (a, c) { return a + d.clusters[c].n_spaces; }, 0), "spaces watched");
+  addStat(st, (d.stale_share * 100).toFixed(1) + "%", "stale readings");
+  addStat(st, hourLabel(d.window_start) + "–" + hourLabel(d.window_end), "collected daily");
+  addStat(st, new Date(d.span[0]).toLocaleDateString("en-US", { month: "short", day: "numeric" }), "started");
+  f.appendChild(st);
+
+  if (d.days_covered < 5) {
+    f.appendChild(banner("<strong>Too early to read the pattern.</strong> " + d.days_covered +
+      (d.days_covered === 1 ? " weekday" : " weekdays") + " collected so far. The live numbers above are real; " +
+      "the grid below needs a few weeks before any single square means much.", true));
+  }
+
+  Object.keys(d.clusters).sort().forEach(function (c) { f.appendChild(clusterCard(c)); });
+  f.appendChild(predictCard());
+  return f;
+}
+
+function verdict() {
+  var v = el("div", "verdict");
+  var n = laNow(), dow = laDow(), hr = n.getHours();
+  v.appendChild(el("div", "when",
+    DOW[dow] + " · " + n.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) + " Los Angeles"));
+
+  if (S.liveErr) {
+    v.appendChild(el("div", "headline", "Can’t reach LADOT"));
+    v.appendChild(el("div", "basis", S.liveErr + " — the pattern below still works; it comes from data already collected."));
+    return v;
+  }
+  if (!S.live) {
+    v.appendChild(el("div", "headline", "Checking what’s free…"));
+    return v;
+  }
+
+  var total = 0, cap = 0;
+  Object.keys(S.live).forEach(function (c) { total += S.live[c].free; cap += S.live[c].total; });
+  v.appendChild(el("div", "headline",
+    total === 0 ? "Nothing free right now"
+                : total + (total === 1 ? " space free right now" : " spaces free right now")));
+
+  var rows = el("div", "rows");
+  Object.keys(S.live).sort().forEach(function (c) {
+    var o = S.live[c], cl = cell(c, dow, hr);
+    var r = el("div", "vrow");
+    r.appendChild(el("span", "big", String(o.free)));
+    r.appendChild(el("span", "nm", c + " <span style='opacity:.6'>of " + o.total + "</span>"));
+    var cmp = el("span", "cmp", cl ? "usual " + fmt1(cl.meanFree) : "no history");
+    if (cl) cmp.title = cl.polls + " polls behind that average";
+    r.appendChild(cmp);
+    rows.appendChild(r);
+  });
+  v.appendChild(rows);
+
+  var notes = [];
+  var anyCell = Object.keys(S.live).map(function (c) { return cell(c, dow, hr); }).filter(Boolean);
+  if (anyCell.length) {
+    var exp = anyCell.reduce(function (a, c) { return a + c.meanFree; }, 0);
+    if (total > exp * 1.3) notes.push("Better than usual for this hour.");
+    else if (total < exp * 0.7) notes.push("Worse than usual for this hour.");
+    else notes.push("About normal for this hour.");
+  }
+  var stale = Object.keys(S.live).reduce(function (a, c) { return a + S.live[c].stale; }, 0);
+  if (stale) notes.push(stale === 1
+    ? "1 sensor hasn’t reported in over a day — treat it as unreliable."
+    : stale + " sensors haven’t reported in over a day — treat them as unreliable.");
+  if (S.liveAt) notes.push("Read " + S.liveAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) + ".");
+  v.appendChild(el("div", "basis", notes.join(" ")));
+  return v;
+}
+
+function addStat(w, v, k) {
+  var s = el("div", "stat");
+  s.appendChild(el("div", "v", String(v)));
+  s.appendChild(el("div", "k", k));
+  w.appendChild(s);
+}
+function banner(html, warn) {
+  var b = el("div", "banner" + (warn ? " warn" : ""));
+  b.innerHTML = "<span class='dot'></span><div>" + html + "</div>";
+  return b;
+}
+
+function clusterCard(c) {
+  var info = S.data.clusters[c];
+  var card = el("div", "card");
+  card.appendChild(el("h2", null, c));
+  card.appendChild(el("p", "hint", info.n_spaces + " sensored spaces · " + info.blockfaces.join(", ") +
+    " · numbers are the average spaces free, colour is the share free."));
+
+  var hours = [];
+  for (var h = S.data.window_start || 8; h < (S.data.window_end || 17); h++) hours.push(h);
+
+  var scroll = el("div", "grid-scroll");
+  var g = el("div", "heat");
+  g.style.gridTemplateColumns = "40px repeat(" + hours.length + ", minmax(30px,1fr))";
+  g.appendChild(el("div"));
+  hours.forEach(function (h) { g.appendChild(el("div", "hcol", hourLabel(h))); });
+  var dnow = laDow(), hnow = laNow().getHours();
+  for (var d = 0; d < 5; d++) {
+    g.appendChild(el("div", "hrow", DOW[d]));
+    for (var i = 0; i < hours.length; i++) {
+      var cl = cell(c, d, hours[i]);
+      var e;
+      if (!cl) { e = el("div", "cell empty", "·"); }
+      else {
+        e = el("div", "cell " + heatClass(cl.meanFree / info.n_spaces), fmt1(cl.meanFree));
+        e.title = DOW[d] + " " + hourLabel(hours[i]) + ": " + fmt1(cl.meanFree) + " free on average of " +
+                  info.n_spaces + ", " + Math.round(cl.zeroShare * 100) + "% of polls had none, n=" + cl.polls;
+      }
+      if (d === dnow && hours[i] === hnow) e.classList.add("now");
+      g.appendChild(e);
+    }
+  }
+  scroll.appendChild(g);
+  card.appendChild(scroll);
+
+  var lg = el("div", "legend");
+  lg.appendChild(el("span", null, "none free"));
+  var sw = el("div", "swatches");
+  ["h0","h1","h2","h3","h4","h5"].forEach(function (h) {
+    var s = el("div", "sw cell " + h); s.style.height = "13px"; sw.appendChild(s);
+  });
+  lg.appendChild(sw);
+  lg.appendChild(el("span", null, "40%+ free"));
+  lg.appendChild(el("span", null, "· dashed = never measured · ring = right now"));
+  card.appendChild(lg);
+  return card;
+}
+
+function predictCard() {
+  var card = el("div", "card");
+  card.appendChild(el("h2", null, "If I go at…"));
+  card.appendChild(el("p", "hint",
+    "What the collected polls say about a given weekday and hour. This is the empirical record, not a model — " +
+    "with few polls behind a square, it is an anecdote."));
+
+  if (S.predDow == null) { S.predDow = laDow(); S.predHour = laNow().getHours(); }
+
+  var dchips = el("div", "chips");
+  dchips.style.marginBottom = "8px";
+  for (var d = 0; d < 5; d++) {
+    (function (dd) {
+      var b = el("button", "chip", DOW[dd]);
+      b.setAttribute("aria-pressed", S.predDow === dd ? "true" : "false");
+      b.onclick = function () { S.predDow = dd; render(); };
+      dchips.appendChild(b);
+    })(d);
+  }
+  card.appendChild(dchips);
+
+  var hchips = el("div", "chips");
+  hchips.style.marginBottom = "14px";
+  for (var h = (S.data.window_start || 8); h < (S.data.window_end || 17); h++) {
+    (function (hh) {
+      var b = el("button", "chip", hourLabel(hh));
+      b.setAttribute("aria-pressed", S.predHour === hh ? "true" : "false");
+      b.onclick = function () { S.predHour = hh; render(); };
+      hchips.appendChild(b);
+    })(h);
+  }
+  card.appendChild(hchips);
+
+  var any = false;
+  Object.keys(S.data.clusters).sort().forEach(function (c) {
+    var cl = cell(c, S.predDow, S.predHour);
+    var box = el("div");
+    box.style.cssText = "padding:11px 0;border-top:1px solid var(--rule)";
+    if (!cl) {
+      box.innerHTML = "<strong>" + c + "</strong><br><span style='color:var(--ink-3);font-size:13px'>" +
+        "Never measured at " + DOW[S.predDow] + " " + hourLabel(S.predHour) + ".</span>";
+    } else {
+      any = true;
+      var conf = cl.polls < 12 ? "one poll or two — an anecdote" :
+                 cl.polls < 60 ? "thin, treat as indicative" : "reasonably sampled";
+      box.innerHTML = "<strong>" + c + "</strong><br>" +
+        "<span style='font-family:\"IBM Plex Mono\",monospace;font-size:19px;font-weight:600'>" +
+        fmt1(cl.meanFree) + "</span> <span style='font-size:13px;color:var(--ink-2)'>free on average of " +
+        S.data.clusters[c].n_spaces + "</span><br>" +
+        "<span style='font-size:13px;color:var(--ink-2)'>Found nothing in <strong>" +
+        Math.round(cl.zeroShare * 100) + "%</strong> of polls · " + cl.polls + " polls (" + conf + ")</span>";
+    }
+    card.appendChild(box);
+  });
+  if (!any) card.appendChild(banner("No polls yet for that slot — collection only started recently.", true));
+  return card;
+}
+
+/* ---------------- Part 1: the basis ---------------- */
+function viewBasis() {
+  var f = document.createDocumentFragment();
+  var d = S.data;
+
+  if (basisDirty()) {
+    f.appendChild(banner("<strong>Unapplied changes.</strong> This page can’t reach the collectors. " +
+      "Copy the block at the bottom into your chat with Claude and it’ll be applied to both.", true));
+  }
+
+  var m = el("div", "card");
+  m.appendChild(el("h2", null, "Where"));
+  m.appendChild(el("p", "hint", "The stretch being measured. Untick a block to propose dropping it."));
+  var img = el("img");
+  img.src = "coverage.png";
+  img.alt = "Map of the tracked metered spaces near USC";
+  img.style.cssText = "border-radius:9px;border:1px solid var(--rule);margin-bottom:12px";
+  m.appendChild(img);
+  Object.keys(d.clusters).sort().forEach(function (c) {
+    var info = d.clusters[c];
+    var row = el("div", "blockrow");
+    var cb = el("input"); cb.type = "checkbox"; cb.checked = !!S.basis.clusters[c];
+    cb.onchange = function () { S.basis.clusters[c] = cb.checked; saveBasis(); render(); };
+    var txt = el("div");
+    txt.appendChild(el("div", "nm", c));
+    txt.appendChild(el("div", "de", info.n_spaces + " spaces · " + info.blockfaces.join(", ")));
+    row.appendChild(cb); row.appendChild(txt);
+    m.appendChild(row);
+  });
+  f.appendChild(m);
+
+  var w = el("div", "card");
+  w.appendChild(el("h2", null, "What range"));
+  w.appendChild(el("p", "hint", "Hours of the day to collect, Los Angeles time. Narrower means fewer polls but nothing outside it is recorded at all."));
+  var r2 = el("div", "row2");
+  [["hourStart", "From"], ["hourEnd", "Until"]].forEach(function (p) {
+    var fl = el("div");
+    fl.appendChild(el("div", "label", "<span class='name'>" + p[1] + "</span>"));
+    var inp = el("input"); inp.type = "number"; inp.min = 0; inp.max = 24; inp.value = S.basis[p[0]];
+    inp.onchange = function () {
+      var v = parseInt(inp.value, 10);
+      if (!isNaN(v) && v >= 0 && v <= 24) { S.basis[p[0]] = v; saveBasis(); render(); }
+    };
+    fl.appendChild(inp);
+    r2.appendChild(fl);
+  });
+  w.appendChild(r2);
+  var wd = el("div", "chips");
+  wd.style.marginTop = "12px";
+  [["Weekdays only", true], ["All week", false]].forEach(function (p) {
+    var b = el("button", "chip", p[0]);
+    b.setAttribute("aria-pressed", S.basis.weekdaysOnly === p[1] ? "true" : "false");
+    b.onclick = function () { S.basis.weekdaysOnly = p[1]; saveBasis(); render(); };
+    wd.appendChild(b);
+  });
+  w.appendChild(wd);
+  f.appendChild(w);
+
+  var h = el("div", "card");
+  h.appendChild(el("h2", null, "How long"));
+  h.appendChild(el("p", "hint",
+    "Collection started " + new Date(d.span[0]).toLocaleDateString("en-US", { month: "long", day: "numeric" }) +
+    " and runs until stopped. Set an end date if you want it to have a defined length."));
+  var fl = el("div", "field");
+  fl.appendChild(el("div", "label", "<span class='name'>Stop collecting on</span><span class='aside'>optional</span>"));
+  var di = el("input"); di.type = "date"; di.value = S.basis.until || "";
+  di.onchange = function () { S.basis.until = di.value; saveBasis(); render(); };
+  fl.appendChild(di);
+  h.appendChild(fl);
+  var st = el("div", "stats");
+  st.style.margin = "14px 0 0";
+  addStat(st, d.days_covered, d.days_covered === 1 ? "weekday so far" : "weekdays so far");
+  addStat(st, d.n_polls.toLocaleString(), "polls");
+  addStat(st, (d.stale_share * 100).toFixed(1) + "%", "stale");
+  h.appendChild(st);
+  f.appendChild(h);
+
+  var out = el("div", "card");
+  out.appendChild(el("h2", null, "Apply these changes"));
+  out.appendChild(el("p", "hint", basisDirty()
+    ? "Copy this and paste it into your chat with Claude."
+    : "Nothing differs from what’s currently running."));
+  var pre = el("pre", "cfg");
+  pre.textContent = JSON.stringify({
+    clusters: Object.keys(S.basis.clusters).filter(function (c) { return S.basis.clusters[c]; }),
+    hours: [S.basis.hourStart, S.basis.hourEnd],
+    weekdaysOnly: S.basis.weekdaysOnly,
+    until: S.basis.until || null
+  }, null, 2);
+  out.appendChild(pre);
+  var bar = el("div");
+  bar.style.cssText = "display:flex;gap:8px;margin-top:12px;flex-wrap:wrap";
+  var cp = el("button", "btn", "Copy for Claude");
+  cp.onclick = function () {
+    navigator.clipboard.writeText("Apply this collection basis:\n" + pre.textContent).then(
+      function () { cp.textContent = "Copied"; setTimeout(function () { cp.textContent = "Copy for Claude"; }, 1600); },
+      function () { cp.textContent = "Copy failed — select the text"; });
+  };
+  var rs = el("button", "btn secondary", "Reset to what’s running");
+  rs.onclick = function () { S.basis = defaultBasis(); saveBasis(); render(); };
+  bar.appendChild(cp); bar.appendChild(rs);
+  out.appendChild(bar);
+  f.appendChild(out);
+  return f;
+}
+
+/* ================= boot ================= */
+document.querySelectorAll(".nav button").forEach(function (b) {
+  b.onclick = function () { S.view = b.dataset.view; render(); };
+});
+
+fetch("data.json", { cache: "no-store" })
+  .then(function (r) { return r.json(); })
+  .then(function (j) {
+    S.data = j;
+    S.basis = loadBasis() || defaultBasis();
+    Object.keys(j.clusters).forEach(function (c) {
+      if (!(c in S.basis.clusters)) S.basis.clusters[c] = true;
+    });
+    render();
+    return fetchLive();
+  })
+  .then(render)
+  .catch(function (e) {
+    document.getElementById("view").innerHTML =
+      "<div class='card'><h2>Couldn’t load the collected data</h2>" +
+      "<p class='hint'>" + (e.message || e) + "</p></div>";
+  });
+
+setInterval(function () { fetchLive().then(render); }, 120000);
+</script>
+</body>
+</html>
