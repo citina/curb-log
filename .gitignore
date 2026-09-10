@@ -1,5 +1,7 @@
 # Bulk archive pulls — 200-300MB each, regenerable via fetch_history.py
 tools/usc_*.csv
+tools/wv_*.csv
+tools/wv_spaces.json
 *.sqlite
 *.sqlite-journal
 
