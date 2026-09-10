@@ -36,15 +36,38 @@ term-time history exists. That is why `poll_live.py` exists.
 ## Tools
 
 ```
-./find_spaces.py --near 34.0206,-118.2890 --radius 800   # which spaces, and which are sensored
-./fetch_history.py --ids sensored_ids.txt --last 2       # stream monthly archives, keep only ours
-./poll_live.py --ids sensored_ids.txt --collector laptop # one snapshot
-./install_poller.sh                                      # that, every 5 min, via launchd
-./patterns.py                                            # weekday x hour, in the terminal
-./build_data.py --out ../docs/data.json                  # the page's data, all sources
-./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx"  # coverage map
-./analyze.py --csv usc_may_jun.csv                       # same, for archive CSVs
+./find_spaces.py --near 34.0206,-118.2890 --radius 800     # which spaces, and which are sensored
+./fetch_history.py --ids sensored_ids.txt --months 2026-08 # stream a monthly archive, keep only ours
+./build_data.py --report                                   # the page's data; grids in the terminal
+./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx" # coverage map
+./poll_live.py --ids sensored_ids.txt --collector laptop   # one snapshot
+./install_poller.sh                                        # laptop poller (5 min) + publisher (30 min)
+./publish.sh                                               # what the publisher runs
 ```
+
+### How "spaces free" is computed
+
+The archive is an event log: each row says a space became VACANT or OCCUPIED at
+an exact second, and between events its state is known and constant. For each
+cluster, `build_data.py` sweeps the merged events in time order keeping a running
+count of vacant spaces, splits every stretch of constant state at 30-minute cell
+boundaries, and credits each cell with vacant space-seconds, observed seconds,
+and seconds with none free. So a cell's
+
+- **mean spaces free** = vacant space-seconds / observed seconds — the exact
+  average across that half hour, not an estimate from samples;
+- **none free** = seconds with zero free / observed seconds — the chance that
+  arriving at a random moment in that half hour finds nothing.
+
+Against the earlier 15-minute sampling the exact figures differ by 0.28 spaces
+on average (80 summer hour-cells) — close, but sampling gives a half-hour cell
+only two readings a day, which is why the exact method matters at this
+resolution. A sensor silent over 24 hours drops out of the count.
+
+Polls are snapshots, not events, so each is held forward until the next one,
+capped at 10 minutes: a gap becomes unobserved time rather than being papered
+over. Wherever the archive covers a day, it is used and polls for that day are
+ignored.
 
 ### Why snapshots, not an event log
 
@@ -66,28 +89,31 @@ answer would be biased long. Sampling the state instead is provably adequate —
 So the poller appends one line per poll — `polled_at_utc,states`, one character
 per space — and the event log was dropped rather than shipped with a known bias.
 
-### Two collectors
+### Collection
 
-`.github/workflows/poll.yml` polls every 5 minutes on GitHub Actions and commits
-to `tools/data/ci/`. The launchd job polls the same endpoint into
-`tools/data/laptop/`, which is gitignored — it is supplementary coverage for
-runs GitHub drops. Separate directories are load-bearing: sharing one file made
-every `git pull` conflict with the laptop's in-progress writes.
-`patterns.py` reads both.
+**The laptop is the real collector.** `install_poller.sh` installs two launchd
+jobs: the poller (every 5 minutes, weekdays 8am-5pm Los Angeles, into
+`tools/data/laptop/`) and the publisher (`publish.sh`, every 30 minutes), which
+pulls, rebuilds `docs/data.json`, and pushes. It is the only thing that rewrites
+the page's data; commits are pathspec-limited so nothing else in the working
+copy is swept up, and `data_through` is stamped from the newest data rather than
+the clock, so a rebuild with nothing new produces no commit.
 
-Both collectors are gated to **weekdays 8am-6pm America/Los_Angeles** — the
-window actually parked in. This deliberately gives up the pre-8am fill-up curve
-and any weekend baseline.
+`.github/workflows/poll.yml` also polls on a 5-minute cron into `tools/data/ci/`,
+but treat it as a bonus: **GitHub fired that schedule three times in the first
+nineteen hours.** Scheduled workflows are documented as best-effort and are
+throttled hard on new repositories. Manual (`workflow_dispatch`) runs are
+reliable; schedules are not a clock.
 
-Laptop polling stops while the Mac sleeps, and that missingness is **not
-random** — it tracks the working day, so it thins exactly the busy hours.
-That is why CI exists and why polls-per-cell is printed with every result.
+Polling stops while the Mac sleeps, and that missingness is not random — it
+tracks the working day. Every cell therefore carries the number of days behind
+it, and unobserved time is shown as unmeasured, never as quiet. None of this is
+permanent: LADOT's archive backfills every day exactly, about two months later.
 
 ### Periods are never blended
 
-`build_data.py` combines two sources into one grid — the LADOT archive (a
-complete event log, sampled every 15 min off the reconstructed step function)
-and our own 5-minute snapshots — and segments them by period:
+`build_data.py` combines the archive and the polls into one grid of weekday x
+half-hour cells from 8am to 4pm, segmented by period:
 
 | Period | From | Source |
 |---|---|---|
@@ -99,13 +125,19 @@ spaces midday vacancy ran ~49% in summer and ~6% in term; a blended figure is
 worse than either. The page shows one period at a time and labels summer as a
 contrast, not a forecast.
 
-The archive contribution is cached in `tools/archive_cells.json` (a few KB) so
-CI can rebuild the page without holding the 200-300MB monthly extracts. Re-run
-`build_data.py` locally with the extracts present whenever a new month is
-published, and commit the refreshed cache.
+The archive contribution is cached per extract file in `tools/archive_cells.json`,
+so a run holding only some extracts (a new month arriving alone) recomputes what
+it has and keeps the rest. When a month publishes: `fetch_history.py` it into
+`tools/usc_YYYY_MM.csv`, and the next publisher run folds it in.
+
+Validation of polling against the archive needs *overlapping* days. Polling began
+9 September, so the first overlap arrives with the September file (~early
+November); August's file cannot validate anything.
 
 ## Caveats found the hard way
 
+- **A cron is not a clock on GitHub.** The 5-minute schedule fired three times in
+  nineteen hours; the laptop, dismissed as redundant, had been doing the work.
 - **Summer data does not transfer.** 3601 Vermont read 49% free at midday in
   June; on a September teaching day it read 6%. Only term-time data can answer
   the question.

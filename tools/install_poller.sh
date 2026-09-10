@@ -37,3 +37,26 @@ echo "Installed $LABEL — polling every 5 minutes."
 echo "  status:    launchctl list | grep $LABEL"
 echo "  log:       tail -f $DIR/poll.log"
 echo "  stop:      launchctl bootout gui/$(id -u)/$LABEL"
+
+# --- publisher: pushes the laptop's snapshots and rebuilds the page every 30 min ---
+PUB_LABEL="com.citina.curblog.publish"
+PUB_PLIST="$HOME/Library/LaunchAgents/$PUB_LABEL.plist"
+cat > "$PUB_PLIST" <<PLISTEOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$PUB_LABEL</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/bash</string><string>$DIR/publish.sh</string></array>
+  <key>StartInterval</key><integer>1800</integer>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
+  <key>StandardOutPath</key><string>$DIR/publish.log</string>
+  <key>StandardErrorPath</key><string>$DIR/publish.log</string>
+</dict>
+</plist>
+PLISTEOF
+launchctl bootout "gui/$(id -u)/$PUB_LABEL" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$PUB_PLIST"
+echo "Installed $PUB_LABEL — publishing every 30 minutes (log: $DIR/publish.log)."

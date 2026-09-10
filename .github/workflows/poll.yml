@@ -30,17 +30,13 @@ jobs:
         working-directory: tools
         run: python3 poll_live.py --ids sensored_ids.txt --data-dir data --collector ci --only-hours 8-17 --only-weekdays
 
-      - name: Refresh the page's aggregate
-        working-directory: tools
-        # The archive half is precomputed locally and cached in
-        # archive_cells.json, so CI never needs the 200MB monthly extracts.
-        run: python3 build_data.py --out ../docs/data.json
-
       - name: Commit the snapshot
         run: |
           git config user.name  "curb-log bot"
           git config user.email "noreply@github.com"
-          git add tools/data/ci docs/data.json
+          # CI only appends its own polls. The laptop publisher (tools/publish.sh)
+          # is the one thing that rebuilds docs/data.json, so the two never collide.
+          git add tools/data/ci
           if git diff --cached --quiet; then
             echo "nothing new"; exit 0
           fi

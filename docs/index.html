@@ -84,7 +84,8 @@
         border:1px solid var(--edge);border-radius:9px}
   .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
   .grid-scroll{overflow-x:auto;padding-bottom:4px}
-  .heat{display:grid;gap:2px;min-width:440px}
+  .heat{display:grid;gap:2px;min-width:560px}
+  .heat .hcol.half{opacity:.5}
   .heat .hcol,.heat .hrow{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);
                           display:flex;align-items:center}
   .heat .hcol{justify-content:center;padding-bottom:3px}
@@ -171,11 +172,18 @@ var S = {
   liveAt: null,
   basis: null,       // the user's edited basis (local until applied)
   predDow: null,
-  predHour: null
+  predSlot: null
 };
 
 function el(t, c, h) { var e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; }
 function hourLabel(h) { return (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? "a" : "p"); }
+function throughLabel(iso) {           // "2026-09-10T10:29", already LA local
+  var p = iso.split(/[-T:]/).map(Number), d = new Date(p[0], p[1] - 1, p[2]);
+  var h = p[3], mm = p[4];
+  return DOW[(d.getDay() + 6) % 7] + " " + p[2] + " " +
+    ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][p[1] - 1] + ", " +
+    (h % 12 === 0 ? 12 : h % 12) + ":" + (mm < 10 ? "0" : "") + mm + (h < 12 ? "a" : "p");
+}
 function fmt1(n) { return (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, ""); }
 
 /* LA local time, wherever the phone happens to be */
@@ -202,12 +210,31 @@ function livePeriod() {
 }
 
 /* ---------- cells ---------- */
-function cellIn(period, cluster, dow, hour) {
-  var v = period && period.cells[cluster + "|" + dow + "|" + hour];
-  if (!v) return null;
-  return { polls: v[0], meanFree: v[1] / v[0], zeroShare: v[2] / v[0] };
+/* ---------- cells ----------
+   A cell is [observed_seconds, vacant_space_seconds, empty_seconds, days].
+   Mean free = vacant space-seconds / observed seconds: the exact average number
+   of free spaces across that half hour, integrated from the event log.
+   None-free share = seconds with zero free / observed seconds. */
+function cellIn(period, cluster, dow, slot) {
+  var v = period && period.cells[cluster + "|" + dow + "|" + slot];
+  if (!v || !v[0]) return null;
+  return { meanFree: v[1] / v[0], zeroShare: v[2] / v[0], days: v[3] };
 }
-function cell(cluster, dow, hour) { return cellIn(curPeriod(), cluster, dow, hour); }
+function cell(cluster, dow, slot) { return cellIn(curPeriod(), cluster, dow, slot); }
+function nSlots() { return (S.data.window_end - S.data.window_start) * 60 / S.data.slot_min; }
+function slotStartMin(k) { return S.data.window_start * 60 + k * S.data.slot_min; }
+function slotLabel(k) {
+  var m = slotStartMin(k), h = Math.floor(m / 60), mm = m % 60;
+  return (h % 12 === 0 ? 12 : h % 12) + ":" + (mm < 10 ? "0" : "") + mm + (h < 12 ? "a" : "p");
+}
+function slotNow() {
+  var n = laNow(), m = n.getHours() * 60 + n.getMinutes() - S.data.window_start * 60;
+  if (m < 0 || m >= (S.data.window_end - S.data.window_start) * 60) return -1;
+  return Math.floor(m / S.data.slot_min);
+}
+function confidence(days) {
+  return days <= 1 ? "one day — an anecdote" : days <= 3 ? days + " days — indicative" : days + " days";
+}
 function heatClass(share) {
   if (share < 0.03) return "h0";
   if (share < 0.08) return "h1";
@@ -291,11 +318,12 @@ function render() {
 
   var d = S.data, pr = curPeriod();
   document.getElementById("sub").textContent = pr
-    ? pr.label + " · " + pr.n_samples.toLocaleString() + " samples"
+    ? pr.label + " · " + pr.days + (pr.days === 1 ? " weekday" : " weekdays")
     : "no data yet";
   document.getElementById("foot").innerHTML =
     "Sensor data from LADOT via <a href='https://data.lacity.org/Transportation/LADOT-Parking-Meter-Occupancy/e7h6-4a3e'>data.lacity.org</a>" +
-    " · collected every 5 min · <a href='https://github.com/citina/curb-log'>source</a>";
+    (d.data_through ? " · grid data through " + throughLabel(d.data_through) : "") +
+    " · <a href='https://github.com/citina/curb-log'>source</a>";
 }
 
 /* ---------------- Part 2: pattern & prediction ---------------- */
@@ -319,11 +347,11 @@ function viewPattern() {
   if (!pr) { f.appendChild(banner("Nothing collected yet.", true)); return f; }
 
   var st = el("div", "stats");
-  addStat(st, pr.n_samples.toLocaleString(), "samples");
+  addStat(st, S.data.slot_min + " min", "per cell");
   addStat(st, pr.days, pr.days === 1 ? "weekday" : "weekdays");
   addStat(st, Object.keys(d.clusters).reduce(function (a, c) { return a + d.clusters[c].n_spaces; }, 0), "spaces");
   addStat(st, pr.sources.join(" + "), "source");
-  addStat(st, hourLabel(d.window_start) + "–" + hourLabel(d.window_end), "hours");
+  addStat(st, hourLabel(d.window_start) + "–" + hourLabel(d.window_end), "grid hours");
   addStat(st, new Date(pr.start + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) +
               (pr.end ? "–" + new Date(pr.end + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "–now"),
           "covering");
@@ -346,7 +374,7 @@ function viewPattern() {
 
 function verdict() {
   var v = el("div", "verdict");
-  var n = laNow(), dow = laDow(), hr = n.getHours();
+  var n = laNow(), dow = laDow(), k = slotNow();
   v.appendChild(el("div", "when",
     DOW[dow] + " · " + n.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) + " Los Angeles"));
 
@@ -360,35 +388,41 @@ function verdict() {
     return v;
   }
 
-  var total = 0, cap = 0;
-  Object.keys(S.live).forEach(function (c) { total += S.live[c].free; cap += S.live[c].total; });
+  var total = 0;
+  Object.keys(S.live).forEach(function (c) { total += S.live[c].free; });
   v.appendChild(el("div", "headline",
     total === 0 ? "Nothing free right now"
                 : total + (total === 1 ? " space free right now" : " spaces free right now")));
 
-  var lp = livePeriod();
-  var rows = el("div", "rows");
+  /* "usual" always means the current period — never summer */
+  var lp = livePeriod(), inGrid = dow < 5 && k >= 0;
+  var rows = el("div", "rows"), exp = 0, liveHave = 0, have = 0, minDays = Infinity;
   Object.keys(S.live).sort().forEach(function (c) {
-    var o = S.live[c], cl = cellIn(lp, c, dow, hr);
+    var o = S.live[c], cl = inGrid ? cellIn(lp, c, dow, k) : null;
+    if (cl) { exp += cl.meanFree; liveHave += o.free; have++; minDays = Math.min(minDays, cl.days); }
     var r = el("div", "vrow");
     r.appendChild(el("span", "big", String(o.free)));
     r.appendChild(el("span", "nm", c + " <span style='opacity:.6'>of " + o.total + "</span>"));
-    var cmp = el("span", "cmp", cl ? "usual " + fmt1(cl.meanFree) : "no history");
-    if (cl) cmp.title = cl.polls + " polls behind that average";
+    var cmp = el("span", "cmp", cl ? "usual " + fmt1(cl.meanFree) + " · " + cl.days + "d" : inGrid ? "no history" : "—");
+    if (cl) cmp.title = "averaged over " + confidence(cl.days);
     r.appendChild(cmp);
     rows.appendChild(r);
   });
   v.appendChild(rows);
 
   var notes = [];
-  var anyCell = Object.keys(S.live).map(function (c) { return cellIn(lp, c, dow, hr); }).filter(Boolean);
-  if (anyCell.length) {
-    var exp = anyCell.reduce(function (a, c) { return a + c.meanFree; }, 0);
-    if (total > exp * 1.3) notes.push("Better than usual for this hour in " + lp.label + ".");
-    else if (total < exp * 0.7) notes.push("Worse than usual for this hour in " + lp.label + ".");
-    else notes.push("About normal for this hour in " + lp.label + ".");
+  if (!inGrid) {
+    notes.push("Outside the weekday " + hourLabel(S.data.window_start) + "–" + hourLabel(S.data.window_end) +
+               " grid, so there is no usual to compare against.");
+  } else if (have && minDays >= 3) {
+    notes.push((liveHave > exp * 1.3 ? "Better than usual" : liveHave < exp * 0.7 ? "Worse than usual" : "About normal") +
+               " for this half hour in " + lp.label + ".");
+  } else if (have) {
+    /* one or two days — possibly today itself — is not a "usual" */
+    notes.push("Only " + minDays + (minDays === 1 ? " day" : " days") + " of " + lp.label +
+               " history for this half hour — too few to call it better or worse than usual.");
   } else if (lp) {
-    notes.push("No " + lp.label + " history for this hour yet, so there is nothing to compare against.");
+    notes.push("No " + lp.label + " history for this half hour yet, so there is nothing to compare against.");
   }
   var stale = Object.keys(S.live).reduce(function (a, c) { return a + S.live[c].stale; }, 0);
   if (stale) notes.push(stale === 1
@@ -416,29 +450,30 @@ function clusterCard(c) {
   var card = el("div", "card");
   card.appendChild(el("h2", null, c));
   card.appendChild(el("p", "hint", info.n_spaces + " sensored spaces · " + info.blockfaces.join(", ") +
-    " · numbers are the average spaces free, colour is the share free."));
+    " · each cell is a half hour: the number is the average spaces free across it, colour is the share free."));
 
-  var hours = [];
-  for (var h = S.data.window_start || 8; h < (S.data.window_end || 17); h++) hours.push(h);
-
+  var ns = nSlots();
   var scroll = el("div", "grid-scroll");
   var g = el("div", "heat");
-  g.style.gridTemplateColumns = "40px repeat(" + hours.length + ", minmax(30px,1fr))";
+  g.style.gridTemplateColumns = "40px repeat(" + ns + ", minmax(30px,1fr))";
   g.appendChild(el("div"));
-  hours.forEach(function (h) { g.appendChild(el("div", "hcol", hourLabel(h))); });
-  var dnow = laDow(), hnow = laNow().getHours();
+  for (var k = 0; k < ns; k++) {
+    var m = slotStartMin(k);
+    g.appendChild(m % 60 === 0 ? el("div", "hcol", hourLabel(m / 60)) : el("div", "hcol half", ":30"));
+  }
+  var dnow = laDow(), know = slotNow();
   for (var d = 0; d < 5; d++) {
     g.appendChild(el("div", "hrow", DOW[d]));
-    for (var i = 0; i < hours.length; i++) {
-      var cl = cell(c, d, hours[i]);
-      var e;
+    for (var j = 0; j < ns; j++) {
+      var cl = cell(c, d, j), e;
       if (!cl) { e = el("div", "cell empty", "·"); }
       else {
         e = el("div", "cell " + heatClass(cl.meanFree / info.n_spaces), fmt1(cl.meanFree));
-        e.title = DOW[d] + " " + hourLabel(hours[i]) + ": " + fmt1(cl.meanFree) + " free on average of " +
-                  info.n_spaces + ", " + Math.round(cl.zeroShare * 100) + "% of polls had none, n=" + cl.polls;
+        e.title = DOW[d] + " " + slotLabel(j) + "–" + slotLabel(j + 1) + ": " + fmt1(cl.meanFree) +
+                  " free on average of " + info.n_spaces + " · none free " + Math.round(cl.zeroShare * 100) +
+                  "% of the time · " + confidence(cl.days);
       }
-      if (d === dnow && hours[i] === hnow) e.classList.add("now");
+      if (d === dnow && j === know) e.classList.add("now");
       g.appendChild(e);
     }
   }
@@ -449,7 +484,7 @@ function clusterCard(c) {
   lg.appendChild(el("span", null, "none free"));
   var sw = el("div", "swatches");
   ["h0","h1","h2","h3","h4","h5"].forEach(function (h) {
-    var s = el("div", "sw cell " + h); s.style.height = "13px"; sw.appendChild(s);
+    var s2 = el("div", "sw cell " + h); s2.style.height = "13px"; sw.appendChild(s2);
   });
   lg.appendChild(sw);
   lg.appendChild(el("span", null, "40%+ free"));
@@ -459,60 +494,58 @@ function clusterCard(c) {
 }
 
 function predictCard() {
-  var card = el("div", "card");
+  var card = el("div", "card"), pr = curPeriod(), ns = nSlots();
   card.appendChild(el("h2", null, "If I go at…"));
   card.appendChild(el("p", "hint",
-    "What " + curPeriod().label + " says about a given weekday and hour. This is the empirical record, " +
-    "not a model — with few samples behind a square, it is an anecdote."));
+    "What " + pr.label + " says about a weekday and half hour: the exact average over every day measured. " +
+    "One day behind a cell is an anecdote, not a forecast."));
 
-  if (S.predDow == null) { S.predDow = laDow(); S.predHour = laNow().getHours(); }
+  if (S.predDow == null) {
+    var dn = laDow(), kn = slotNow();
+    if (dn < 5 && kn >= 0) { S.predDow = dn; S.predSlot = kn; }
+    else { S.predDow = 1; S.predSlot = (10 - S.data.window_start) * 60 / S.data.slot_min; }  // Tue 10:00
+  }
 
   var dchips = el("div", "chips");
   dchips.style.marginBottom = "8px";
-  for (var d = 0; d < 5; d++) {
-    (function (dd) {
-      var b = el("button", "chip", DOW[dd]);
-      b.setAttribute("aria-pressed", S.predDow === dd ? "true" : "false");
-      b.onclick = function () { S.predDow = dd; render(); };
-      dchips.appendChild(b);
-    })(d);
-  }
+  for (var d = 0; d < 5; d++) (function (dd) {
+    var b = el("button", "chip", DOW[dd]);
+    b.setAttribute("aria-pressed", S.predDow === dd ? "true" : "false");
+    b.onclick = function () { S.predDow = dd; render(); };
+    dchips.appendChild(b);
+  })(d);
   card.appendChild(dchips);
 
-  var hchips = el("div", "chips");
-  hchips.style.marginBottom = "14px";
-  for (var h = (S.data.window_start || 8); h < (S.data.window_end || 17); h++) {
-    (function (hh) {
-      var b = el("button", "chip", hourLabel(hh));
-      b.setAttribute("aria-pressed", S.predHour === hh ? "true" : "false");
-      b.onclick = function () { S.predHour = hh; render(); };
-      hchips.appendChild(b);
-    })(h);
-  }
-  card.appendChild(hchips);
+  var schips = el("div", "chips");
+  schips.style.marginBottom = "14px";
+  for (var k = 0; k < ns; k++) (function (kk) {
+    var b = el("button", "chip", slotLabel(kk));
+    b.setAttribute("aria-pressed", S.predSlot === kk ? "true" : "false");
+    b.onclick = function () { S.predSlot = kk; render(); };
+    schips.appendChild(b);
+  })(k);
+  card.appendChild(schips);
 
   var any = false;
   Object.keys(S.data.clusters).sort().forEach(function (c) {
-    var cl = cell(c, S.predDow, S.predHour);
-    var box = el("div");
+    var cl = cell(c, S.predDow, S.predSlot), box = el("div");
     box.style.cssText = "padding:11px 0;border-top:1px solid var(--rule)";
     if (!cl) {
       box.innerHTML = "<strong>" + c + "</strong><br><span style='color:var(--ink-3);font-size:13px'>" +
-        "Never measured at " + DOW[S.predDow] + " " + hourLabel(S.predHour) + ".</span>";
+        "Never measured at " + DOW[S.predDow] + " " + slotLabel(S.predSlot) + " in " + pr.label + ".</span>";
     } else {
       any = true;
-      var conf = cl.polls < 12 ? "a sample or two — an anecdote" :
-                 cl.polls < 60 ? "thin, treat as indicative" : "reasonably sampled";
       box.innerHTML = "<strong>" + c + "</strong><br>" +
         "<span style='font-family:\"IBM Plex Mono\",monospace;font-size:19px;font-weight:600'>" +
         fmt1(cl.meanFree) + "</span> <span style='font-size:13px;color:var(--ink-2)'>free on average of " +
         S.data.clusters[c].n_spaces + "</span><br>" +
-        "<span style='font-size:13px;color:var(--ink-2)'>Found nothing in <strong>" +
-        Math.round(cl.zeroShare * 100) + "%</strong> of samples · " + cl.polls + " samples (" + conf + ")</span>";
+        "<span style='font-size:13px;color:var(--ink-2)'>Not one space free <strong>" +
+        Math.round(cl.zeroShare * 100) + "%</strong> of the time · " + confidence(cl.days) + "</span>";
     }
     card.appendChild(box);
   });
-  if (!any) card.appendChild(banner("Nothing measured for that slot in " + curPeriod().label + " yet.", true));
+  if (!any) card.appendChild(banner("Nothing measured for " + DOW[S.predDow] + " " + slotLabel(S.predSlot) +
+    " in " + pr.label + " yet.", true));
   return card;
 }
 
@@ -590,7 +623,7 @@ function viewBasis() {
   var st = el("div", "stats");
   st.style.margin = "14px 0 0";
   (d.periods || []).forEach(function (p) {
-    addStat(st, p.n_samples.toLocaleString(), p.label.toLowerCase() + " samples");
+    addStat(st, p.days, p.label.toLowerCase() + (p.days === 1 ? " weekday" : " weekdays"));
   });
   h.appendChild(st);
   f.appendChild(h);

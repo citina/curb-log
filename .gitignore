@@ -8,18 +8,16 @@ tools/wv_spaces.json
 # Local runtime noise
 tools/poll.log
 tools/poll.err
-tools/data/failures.log
+tools/publish.log
+tools/data/*/failures.log
 
 __pycache__/
 *.pyc
 .DS_Store
 
-# CI's snapshots are the committed dataset (tools/data/ci/).
-# The laptop collector is local supplementary coverage — untracked, so pulls
-# never conflict with the every-5-minute CI commits. patterns.py reads both.
-tools/data/laptop/
-
 # Superseded wide-area collection, kept locally in case the scope widens again
 data_wide_backup/
 tools/coverage.png
 tools/.tilecache/
+
+# Both collectors' snapshots (tools/data/ci/, tools/data/laptop/) are tracked.

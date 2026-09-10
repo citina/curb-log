@@ -1,34 +1,49 @@
 #!/usr/bin/env python3
-"""Build the page's data.json from every source we have, segmented by period.
+"""Build the page's data.json: exact time-weighted occupancy, in 30-minute cells.
 
-Two kinds of input, combined into one grid:
+HOW "SPACES FREE" IS COMPUTED
+The LADOT archive is an event log: each row says a space became VACANT or
+OCCUPIED at an exact second. Between two events the space's state is known and
+constant, so for every cluster we sweep through its events in time order,
+keeping a running count of vacant spaces. Each stretch of constant state is
+split at 30-minute cell boundaries and credited to its cell as:
 
-  ARCHIVE  (LADOT monthly CSVs) — a complete event log. Occupancy is a step
-           function; we sample it every --grid minutes.
-  POLLS    (our own snapshots)  — already samples of state, taken every 5 min.
+    vacant space-seconds   (vacant count x duration)
+    observed seconds       (duration, whenever at least one space is known)
+    empty seconds          (duration, when the known count of vacant is zero)
 
-Both end up as "share of samples where the space was vacant", which is why they
-are comparable: the 5-minute sampling was validated against the archive at
-0.33pp of the true hourly rate.
+so a cell's mean spaces free = vacant space-seconds / observed seconds, and
+"found nothing" = empty seconds / observed seconds. That is the exact average
+over the half hour, not an estimate from samples.
 
-PERIODS ARE NEVER BLENDED. Summer and term-time are different worlds on a
-university block — measured on these exact spaces, midday vacancy ran 49% in
-summer and 6% in term. Averaging them produces a confidently wrong number, so
-each period is aggregated separately and the page picks one.
+A space silent for more than --stale-hours drops out of the count (a dead sensor
+would otherwise keep asserting its last state forever); before its first event
+it is unknown too.
+
+Our own polls are not an event log — they are snapshots — so each snapshot is
+held forward until the next one, capped at --hold minutes so a dropped run or a
+sleeping laptop becomes unobserved time rather than being papered over.
+
+PRECEDENCE: where the archive covers a day, it is used and polls for that day are
+ignored — the archive is the complete record; polls are a stand-in until it is
+published. PERIODS ARE NEVER BLENDED: summer and term are aggregated separately
+(midday vacancy on these spaces ran ~49% in summer, ~6% in term).
 
   ./build_data.py --out ../docs/data.json
+  ./build_data.py --report            # print the grids in the terminal
 """
 import argparse, collections, csv, datetime as dt, glob, json, os, re, sys
 from zoneinfo import ZoneInfo
 
 LA = ZoneInfo("America/Los_Angeles")
 
-# USC Fall 2026 classes began Monday 24 August 2026. The sensors on these blocks
-# came online 12 May 2026, so nothing exists before that.
+# USC Fall 2026 classes began Monday 24 August 2026. Sensors on these blocks came
+# online 12 May 2026; nothing exists before that.
 PERIODS = [
     {"id": "fall-2026",   "label": "Fall 2026 term", "start": "2026-08-24", "end": None},
     {"id": "summer-2026", "label": "Summer 2026",    "start": "2026-05-12", "end": "2026-08-23"},
 ]
+DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
 
 def cluster_of(blockface):
@@ -37,139 +52,166 @@ def cluster_of(blockface):
 
 
 def period_of(d):
+    iso = d.isoformat()
     for p in PERIODS:
-        if d.isoformat() >= p["start"] and (p["end"] is None or d.isoformat() <= p["end"]):
+        if iso >= p["start"] and (p["end"] is None or iso <= p["end"]):
             return p["id"]
     return None
 
 
 class Acc:
-    """(period, cluster, dow, hour) -> [samples, sum_free, samples_with_none_free]"""
-    def __init__(self):
-        self.cells = collections.defaultdict(lambda: [0, 0, 0])
+    """(period, cluster, dow, slot) -> [observed_s, vacant_space_s, empty_s, {dates}]"""
+
+    def __init__(self, win_start, win_end, slot_min):
+        self.ws, self.we, self.slot = win_start * 60, win_end * 60, slot_min
+        self.cells = collections.defaultdict(lambda: [0.0, 0.0, 0.0, set()])
         self.days = collections.defaultdict(set)
-        self.n = collections.Counter()
         self.sources = collections.defaultdict(set)
+        self.latest_poll = None
 
-    def add(self, t, cluster, free, known, period, source):
-        if not known:
+    def add(self, a, b, cluster, vacant, known, source):
+        """Credit a stretch [a, b) of constant state to the cells it overlaps."""
+        if known <= 0 or b <= a:
             return
-        self.cells[(period, cluster, t.weekday(), t.hour)][0] += 1
-        self.cells[(period, cluster, t.weekday(), t.hour)][1] += free
-        if free == 0:
-            self.cells[(period, cluster, t.weekday(), t.hour)][2] += 1
-        self.days[period].add(t.date().isoformat())
-        self.n[period] += 1
-        self.sources[period].add(source)
+        t = a
+        while t < b:
+            mins = t.hour * 60 + t.minute
+            # jump straight to the window when outside it
+            if t.weekday() >= 5 or mins >= self.we:
+                t = (t + dt.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                continue
+            if mins < self.ws:
+                t = t.replace(hour=self.ws // 60, minute=self.ws % 60, second=0, microsecond=0)
+                continue
+            k = (mins - self.ws) // self.slot
+            edge = t.replace(hour=0, minute=0, second=0, microsecond=0) + \
+                dt.timedelta(minutes=self.ws + (k + 1) * self.slot)
+            q = min(b, edge)
+            per = period_of(t.date())
+            if per:
+                L = (q - t).total_seconds()
+                c = self.cells[(per, cluster, t.weekday(), k)]
+                c[0] += L
+                c[1] += vacant * L
+                if vacant == 0:
+                    c[2] += L
+                c[3].add(t.date().isoformat())
+                self.days[per].add(t.date().isoformat())
+                self.sources[per].add(source)
+            t = q
 
 
-def load_archive(paths, keep, cluster_by_space, acc, grid_min, stale_h, window):
-    """Reconstruct each space's step function and sample it on a fixed grid."""
+def load_archive(paths, cluster_spaces, acc, stale_h):
+    """Exact sweep over each cluster's merged event log. Returns dates covered."""
+    covered = set()
+    stale = dt.timedelta(hours=stale_h)
+    keep = {s for ss in cluster_spaces.values() for s in ss}
     for path in paths:
         ev = collections.defaultdict(list)
         with open(path, newline="") as f:
             for r in csv.DictReader(f):
-                sid = r["SpaceID"]
-                if sid not in keep:
-                    continue
-                ev[sid].append((dt.datetime.strptime(r["EventTime_Local"], "%m/%d/%Y %I:%M:%S %p"),
-                                r["OccupancyState"]))
+                if r["SpaceID"] in keep:
+                    ev[r["SpaceID"]].append(
+                        (dt.datetime.strptime(r["EventTime_Local"], "%m/%d/%Y %I:%M:%S %p"),
+                         r["OccupancyState"]))
         if not ev:
             continue
-        for v in ev.values():
-            v.sort()
-        allt = [t for v in ev.values() for t, _ in v]
-        t0 = min(allt).replace(hour=0, minute=0, second=0, microsecond=0)
-        t1 = max(allt)
-        step = dt.timedelta(minutes=grid_min)
-        stale = dt.timedelta(hours=stale_h)
+        end = max(t for v in ev.values() for t, _ in v)
+        start = min(t for v in ev.values() for t, _ in v)
+        d = start.date()
+        while d <= end.date():
+            covered.add(d.isoformat())
+            d += dt.timedelta(days=1)
 
-        # state[space] walked forward in lockstep with the sample clock
-        ptr = {s: 0 for s in ev}
-        cur = {s: None for s in ev}
-        seen = {s: None for s in ev}
-        t = t0
-        while t <= t1:
-            per = period_of(t.date())
-            inwin = window[0] <= t.hour < window[1] and t.weekday() < 5
-            for s, e in ev.items():
-                i, n = ptr[s], len(e)
-                while i < n and e[i][0] <= t:
-                    seen[s], cur[s] = e[i]
-                    i += 1
-                ptr[s] = i
-            if per and inwin:
-                byc = collections.defaultdict(lambda: [0, 0])
-                for s in ev:
-                    if cur[s] is None or (t - seen[s]) > stale:
-                        continue
-                    c = cluster_by_space.get(s)
-                    if c is None:
-                        continue
-                    byc[c][1] += 1
-                    if cur[s] == "VACANT":
-                        byc[c][0] += 1
-                for c, (free, known) in byc.items():
-                    acc.add(t, c, free, known, per, "archive")
-            t += step
+        for cluster, spaces in cluster_spaces.items():
+            stream = []
+            for s in spaces:
+                e = sorted(ev.get(s, []))
+                for i, (t, st) in enumerate(e):
+                    stream.append((t, s, "V" if st == "VACANT" else "O" if st == "OCCUPIED" else None))
+                    nxt = e[i + 1][0] if i + 1 < len(e) else end
+                    if nxt - t > stale:                    # silent too long: stop trusting it
+                        stream.append((t + stale, s, None))
+            stream.sort(key=lambda x: x[0])
+            state = {}
+            prev = None
+            for t, s, st in stream:
+                if prev is not None and t > prev:
+                    vals = list(state.values())
+                    acc.add(prev, t, cluster, vals.count("V"), len(vals), "archive")
+                if st is None:
+                    state.pop(s, None)
+                else:
+                    state[s] = st
+                prev = t
+            if prev is not None and end > prev:
+                vals = list(state.values())
+                acc.add(prev, end, cluster, vals.count("V"), len(vals), "archive")
         print(f"  archive {os.path.basename(path)}: {len(ev)} spaces, "
-              f"{sum(len(v) for v in ev.values()):,} events", file=sys.stderr)
+              f"{sum(len(v) for v in ev.values()):,} events, {start:%-d %b}-{end:%-d %b}",
+              file=sys.stderr)
+    return covered
 
 
-def load_polls(data_dir, cluster_by_space, acc, window):
+def load_polls(data_dir, cluster_spaces, acc, hold_min, skip_dates):
     order_path = os.path.join(data_dir, "space_order.txt")
     if not os.path.exists(order_path):
-        return
+        return 0
     ids = [l.strip() for l in open(order_path) if l.strip() and not l.startswith("#")]
-    paths = glob.glob(os.path.join(data_dir, "*.csv")) + glob.glob(os.path.join(data_dir, "*", "*.csv"))
-    idx = collections.defaultdict(list)
-    for i, s in enumerate(ids):
-        c = cluster_by_space.get(s)
-        if c:
-            idx[c].append(i)
-    n = 0
-    for path in sorted(paths):
+    pos = {s: i for i, s in enumerate(ids)}
+    cols = {c: [pos[s] for s in ss if s in pos] for c, ss in cluster_spaces.items()}
+    snaps = []
+    for path in glob.glob(os.path.join(data_dir, "*.csv")) + glob.glob(os.path.join(data_dir, "*", "*.csv")):
         with open(path, newline="") as f:
             for r in csv.DictReader(f):
                 t = (dt.datetime.fromisoformat(r["polled_at_utc"])
                      .replace(tzinfo=dt.timezone.utc).astimezone(LA).replace(tzinfo=None))
-                per = period_of(t.date())
-                if not per or not (window[0] <= t.hour < window[1]) or t.weekday() >= 5:
-                    continue
-                st = r["states"]
-                for c, cols in idx.items():
-                    free = sum(1 for i in cols if i < len(st) and st[i] in "Vv")
-                    known = sum(1 for i in cols if i < len(st) and st[i] in "VOvo")
-                    acc.add(t, c, free, known, per, "poll")
-                n += 1
-    print(f"  polls: {n:,} snapshots", file=sys.stderr)
+                if t.date().isoformat() not in skip_dates:
+                    snaps.append((t, r["states"]))
+    snaps.sort()
+    acc.latest_poll = snaps[-1][0] if snaps else None
+    hold = dt.timedelta(minutes=hold_min)
+    for i, (t, st) in enumerate(snaps):
+        b = min(snaps[i + 1][0], t + hold) if i + 1 < len(snaps) else t + hold
+        for c, cc in cols.items():
+            # uppercase only: lowercase marks a state >24h old, excluded exactly
+            # as the archive sweep excludes silent sensors
+            v = sum(1 for j in cc if j < len(st) and st[j] == "V")
+            k = sum(1 for j in cc if j < len(st) and st[j] in "VO")
+            acc.add(t, b, c, v, k, "poll")
+    print(f"  polls: {len(snaps):,} snapshots used"
+          + (f"; archive covers {len(skip_dates)} days, polls on those days ignored" if skip_dates else ""),
+          file=sys.stderr)
+    return len(snaps)
 
 
-def save_archive_cache(acc, path):
-    out = {}
-    for (per, c, d, h), v in acc.cells.items():
-        out.setdefault(per, {"n": 0, "days": 0, "cells": {}})
-        out[per]["cells"][f"{c}|{d}|{h}"] = v
-    for per in out:
-        out[per]["n"] = acc.n[per]
-        out[per]["days"] = len(acc.days[per])
-    json.dump(out, open(path, "w"), separators=(",", ":"))
-    print(f"  cached archive contribution -> {path}", file=sys.stderr)
+def slot_label(ws, slot, k):
+    m = ws * 60 + k * slot
+    h, mm = divmod(m, 60)
+    return f"{h % 12 or 12}:{mm:02d}{'a' if h < 12 else 'p'}"
 
 
-def load_archive_cache(acc, path):
-    if not os.path.exists(path):
-        print("  no archive extracts and no cache — polls only", file=sys.stderr)
-        return
-    for per, blk in json.load(open(path)).items():
-        for key, v in blk["cells"].items():
-            c, d, h = key.rsplit("|", 2)
-            acc.cells[(per, c, int(d), int(h))] = list(v)
-        acc.n[per] += blk["n"]
-        acc.sources[per].add("archive")
-        # day identities are not kept in the cache; carry the count forward
-        acc.days[per].update("cached-%d" % i for i in range(blk["days"]))
-    print(f"  archive contribution from cache ({path})", file=sys.stderr)
+def report(payload):
+    ws, we, sl = payload["window_start"], payload["window_end"], payload["slot_min"]
+    nslot = (we - ws) * 60 // sl
+    for pr in payload["periods"]:
+        print(f"\n=== {pr['label']} · {pr['days']} weekdays · {'+'.join(pr['sources'])} ===")
+        for c, info in payload["clusters"].items():
+            print(f"\n{c} ({info['n_spaces']} spaces) — mean spaces free, 30-min cells")
+            print("      " + "".join(f"{slot_label(ws, sl, k)[:-1]:>6}" for k in range(nslot)))
+            for d in range(5):
+                row = []
+                for k in range(nslot):
+                    v = pr["cells"].get(f"{c}|{d}|{k}")
+                    row.append(f"{v[1]/v[0]:6.1f}" if v and v[0] else "     ·")
+                print(f"{DOW[d]:<6}" + "".join(row))
+            print("      days behind each cell:")
+            for d in range(5):
+                row = []
+                for k in range(nslot):
+                    v = pr["cells"].get(f"{c}|{d}|{k}")
+                    row.append(f"{v[3]:6d}" if v else "     ·")
+                print(f"{DOW[d]:<6}" + "".join(row))
 
 
 def main():
@@ -177,77 +219,90 @@ def main():
     p.add_argument("--ids", default="sensored_ids.txt")
     p.add_argument("--spaces", default="spaces.json")
     p.add_argument("--archive", default="usc_*.csv", help="glob of LADOT archive extracts")
+    p.add_argument("--archive-cache", default="archive_cells.json")
     p.add_argument("--data-dir", default="data")
-    p.add_argument("--grid", type=int, default=15)
+    p.add_argument("--window", default="8-16", help="grid hours, local time")
+    p.add_argument("--slot", type=int, default=30, help="minutes per cell")
     p.add_argument("--stale-hours", type=float, default=24)
-    p.add_argument("--hours", default="8-17")
+    p.add_argument("--hold", type=float, default=10, help="max minutes a poll snapshot is held")
     p.add_argument("--out", default="../docs/data.json")
-    p.add_argument("--archive-cache", default="archive_cells.json",
-                   help="archive contribution, cached so CI need not hold the 200MB extracts")
+    p.add_argument("--report", action="store_true")
     a = p.parse_args()
 
-    window = tuple(int(x) for x in a.hours.split("-"))
+    ws, we = (int(x) for x in a.window.split("-"))
     ids = [l.strip() for l in open(a.ids) if l.strip()]
     meta = json.load(open(a.spaces))
-    cluster_by_space = {s: cluster_of(meta[s]["blockface"]) for s in ids if s in meta}
-    clusters = sorted(set(cluster_by_space.values()))
+    cluster_spaces = collections.defaultdict(list)
+    for s in ids:
+        if s in meta:
+            cluster_spaces[cluster_of(meta[s]["blockface"])].append(s)
 
-    acc = Acc()
+    acc = Acc(ws, we, a.slot)
     print("building:", file=sys.stderr)
-    archives = sorted(glob.glob(a.archive))
-    if archives:
-        load_archive(archives, set(ids), cluster_by_space, acc, a.grid, a.stale_hours, window)
-        save_archive_cache(acc, a.archive_cache)
-    else:
-        # CI has the repo but not the multi-hundred-MB monthly extracts, so the
-        # archive half is precomputed locally and committed as a small cache.
-        load_archive_cache(acc, a.archive_cache)
-    load_polls(a.data_dir, cluster_by_space, acc, window)
+    # The cache is keyed by extract file, so a run holding only some extracts
+    # (CI holds none; a new month arrives alone) recomputes what it has and
+    # keeps the rest instead of silently dropping it.
+    cache = json.load(open(a.archive_cache)) if os.path.exists(a.archive_cache) else {}
+    files = cache.get("files", {})
+    for path in sorted(glob.glob(a.archive)):
+        one = Acc(ws, we, a.slot)
+        dates = load_archive([path], cluster_spaces, one, a.stale_hours)
+        files[os.path.basename(path)] = {
+            "dates": sorted(dates),
+            "cells": {f"{per}|{c}|{d}|{k}": [round(v[0], 1), round(v[1], 1), round(v[2], 1), sorted(v[3])]
+                      for (per, c, d, k), v in one.cells.items()}}
+    covered = set()
+    for blk in files.values():
+        covered.update(blk["dates"])
+        for key, v in blk["cells"].items():
+            per, c, d, k = key.split("|")
+            cell = acc.cells[(per, c, int(d), int(k))]
+            cell[0] += v[0]; cell[1] += v[1]; cell[2] += v[2]
+            cell[3].update(v[3])
+            acc.days[per].update(v[3])
+            acc.sources[per].add("archive")
+    if files:
+        json.dump({"files": files}, open(a.archive_cache, "w"), separators=(",", ":"))
+        print(f"  archive extracts in cache: {', '.join(sorted(files))}", file=sys.stderr)
+    load_polls(a.data_dir, cluster_spaces, acc, a.hold, covered)
 
     def centroid(c):
-        ps = [meta[s]["latlng"] for s, cc in cluster_by_space.items() if cc == c and meta[s].get("latlng")]
-        if not ps:
-            return None
+        ps = [meta[s]["latlng"] for s in cluster_spaces[c] if meta[s].get("latlng")]
         return [sum(float(q["latitude"]) for q in ps) / len(ps),
-                sum(float(q["longitude"]) for q in ps) / len(ps)]
+                sum(float(q["longitude"]) for q in ps) / len(ps)] if ps else None
 
     periods = []
     for spec in PERIODS:
         pid = spec["id"]
-        if not acc.n[pid]:
+        cells = {f"{c}|{d}|{k}": [round(v[0]), round(v[1]), round(v[2]), len(v[3])]
+                 for (per, c, d, k), v in acc.cells.items() if per == pid and v[0] > 0}
+        if not cells:
             continue
-        cells = {}
-        for (per, c, d, h), v in acc.cells.items():
-            if per == pid:
-                cells[f"{c}|{d}|{h}"] = v
-        periods.append({
-            "id": pid, "label": spec["label"],
-            "start": spec["start"], "end": spec["end"],
-            "sources": sorted(acc.sources[pid]),
-            "n_samples": acc.n[pid],
-            "days": len(acc.days[pid]),
-            "cells": cells,
-        })
+        periods.append({"id": pid, "label": spec["label"], "start": spec["start"], "end": spec["end"],
+                        "sources": sorted(acc.sources[pid]), "days": len(acc.days[pid]),
+                        "cells": cells})
 
+    through = acc.latest_poll or (dt.datetime.fromisoformat(max(covered)) if covered else None)
     payload = {
-        "generated": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
-        "window_start": window[0], "window_end": window[1],
-        "term_start": "2026-08-24",
-        "sensors_live": "2026-05-12",
-        "clusters": {c: {"n_spaces": sum(1 for v in cluster_by_space.values() if v == c),
-                         "spaces": [s for s in ids if cluster_by_space.get(s) == c],
-                         "centroid": centroid(c),
-                         "blockfaces": sorted({meta[s]["blockface"] for s in ids
-                                               if cluster_by_space.get(s) == c})}
-                     for c in clusters},
+        # the newest data inside, in LA local time — not the build clock, so a
+        # rebuild with no new data is byte-identical and there is nothing to commit
+        "data_through": through.isoformat(timespec="minutes") if through else None,
+        "window_start": ws, "window_end": we, "slot_min": a.slot,
+        "cell_format": ["observed_seconds", "vacant_space_seconds", "empty_seconds", "days"],
+        "term_start": "2026-08-24", "sensors_live": "2026-05-12",
+        "clusters": {c: {"n_spaces": len(ss), "spaces": ss, "centroid": centroid(c),
+                         "blockfaces": sorted({meta[s]["blockface"] for s in ss})}
+                     for c, ss in sorted(cluster_spaces.items())},
         "periods": periods,
         "default_period": periods[0]["id"] if periods else None,
     }
     json.dump(payload, open(a.out, "w"), separators=(",", ":"))
     print(f"\nwrote {a.out} ({os.path.getsize(a.out)//1024} KB)")
     for pr in periods:
-        print(f"  {pr['label']:<18} {pr['n_samples']:>8,} samples · {pr['days']:>3} days · "
-              f"{len(pr['cells']):>3} cells · {'+'.join(pr['sources'])}")
+        print(f"  {pr['label']:<16} {pr['days']:>3} weekdays · {len(pr['cells']):>3} cells · "
+              f"{'+'.join(pr['sources'])}")
+    if a.report:
+        report(payload)
 
 
 if __name__ == "__main__":
