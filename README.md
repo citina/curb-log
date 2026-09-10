@@ -40,7 +40,8 @@ term-time history exists. That is why `poll_live.py` exists.
 ./fetch_history.py --ids sensored_ids.txt --last 2       # stream monthly archives, keep only ours
 ./poll_live.py --ids sensored_ids.txt --collector laptop # one snapshot
 ./install_poller.sh                                      # that, every 5 min, via launchd
-./patterns.py                                            # weekday x hour, by walkable cluster
+./patterns.py                                            # weekday x hour, in the terminal
+./build_data.py --out ../docs/data.json                  # the page's data, all sources
 ./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx"  # coverage map
 ./analyze.py --csv usc_may_jun.csv                       # same, for archive CSVs
 ```
@@ -81,6 +82,27 @@ and any weekend baseline.
 Laptop polling stops while the Mac sleeps, and that missingness is **not
 random** — it tracks the working day, so it thins exactly the busy hours.
 That is why CI exists and why polls-per-cell is printed with every result.
+
+### Periods are never blended
+
+`build_data.py` combines two sources into one grid — the LADOT archive (a
+complete event log, sampled every 15 min off the reconstructed step function)
+and our own 5-minute snapshots — and segments them by period:
+
+| Period | From | Source |
+|---|---|---|
+| Summer 2026 | 12 May (sensors installed) – 23 Aug | archive |
+| Fall 2026 term | 24 Aug (classes began) – now | polls, then archive as it publishes |
+
+They are aggregated separately and never averaged together. On these exact
+spaces midday vacancy ran ~49% in summer and ~6% in term; a blended figure is
+worse than either. The page shows one period at a time and labels summer as a
+contrast, not a forecast.
+
+The archive contribution is cached in `tools/archive_cells.json` (a few KB) so
+CI can rebuild the page without holding the 200-300MB monthly extracts. Re-run
+`build_data.py` locally with the extracts present whenever a new month is
+published, and commit the refreshed cache.
 
 ## Caveats found the hard way
 

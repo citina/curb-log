@@ -32,7 +32,9 @@ jobs:
 
       - name: Refresh the page's aggregate
         working-directory: tools
-        run: python3 patterns.py --hours 8-17 --json ../docs/data.json
+        # The archive half is precomputed locally and cached in
+        # archive_cells.json, so CI never needs the 200MB monthly extracts.
+        run: python3 build_data.py --out ../docs/data.json
 
       - name: Commit the snapshot
         run: |
