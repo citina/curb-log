@@ -136,12 +136,14 @@ November); August's file cannot validate anything.
 
 ## Caveats found the hard way
 
-- **launchd, ~/Desktop, and whose permission it is.** macOS charges a launchd job's
-  file access to the program it launches. `/bin/bash` may not touch `~/Desktop`,
-  so a shell-script publisher died before running a line — exit 78 (EX_CONFIG),
-  no output, nothing in its log. Both jobs therefore run under the Anaconda
-  Python, which has that access. If a job ever goes silent with exit 78, check
-  this first.
+- **A launchd job that exits 78 with an empty log couldn't open its log file.**
+  The publisher failed this way twice, and the cause was self-inflicted: its log
+  had been created from a sandboxed shell, which tags files
+  `com.apple.provenance`, and launchd could not open it for the job. Logs launchd
+  creates itself carry `com.apple.macl` and work; deleting the file fixed it at
+  once. An earlier diagnosis blamed `/bin/bash` lacking Desktop access and ported
+  the publisher to Python — that was wrong, though the port is harmless. Never
+  pre-create or truncate a job's log by hand.
 - **A cron is not a clock on GitHub.** The 5-minute schedule fired three times in
   nineteen hours; the laptop, dismissed as redundant, had been doing the work.
 - **Summer data does not transfer.** 3601 Vermont read 49% free at midday in

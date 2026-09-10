@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Publish the laptop's snapshots: pull CI's, rebuild the page data, commit, push.
 
-Run every 30 minutes by launchd (see install_poller.sh). This is Python rather
-than shell on purpose: macOS charges a launchd job's file access to the program
-it launches, and /bin/bash has no permission for ~/Desktop, where this project
-lives — launchd failed a bash version before it ran a line (exit 78, EX_CONFIG,
-no output). The Python that runs the poller does have that access, so this runs
-under the same interpreter.
+Run every 30 minutes by launchd (see install_poller.sh), under the same Python
+as the poller.
+
+If this job ever exits 78 (EX_CONFIG) with an empty log, launchd could not open
+its log file. That happened when publish.log had been created from a sandboxed
+shell, which tags files com.apple.provenance; logs launchd creates itself carry
+com.apple.macl and work. Delete the log and let launchd recreate it — never
+create or truncate it by hand.
 
 This is the only writer of docs/data.json; CI appends to tools/data/ci/ and
 nothing else, so the two never conflict. Commits are pathspec-limited, so
