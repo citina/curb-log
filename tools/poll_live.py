@@ -35,8 +35,9 @@ LIVE = "https://data.lacity.org/resource/e7h6-4a3e.json"
 
 
 def fetch(ids, token=None):
-    """-> {spaceid: 'VACANT'|'OCCUPIED'}"""
+    """-> {spaceid: (state, age_hours_since_that_transition)}"""
     out = {}
+    now = dt.datetime.now(dt.timezone.utc)
     hdrs = {"X-App-Token": token} if token else {}
     for i in range(0, len(ids), 150):
         chunk = ",".join("'%s'" % s for s in ids[i:i + 150])
@@ -44,7 +45,9 @@ def fetch(ids, token=None):
         req = urllib.request.Request(f"{LIVE}?{q}", headers=hdrs)
         with urllib.request.urlopen(req, timeout=45) as r:
             for row in json.load(r):
-                out[row["spaceid"]] = row["occupancystate"]
+                t = dt.datetime.fromisoformat(row["eventtime"]).replace(tzinfo=dt.timezone.utc)
+                out[row["spaceid"]] = (row["occupancystate"],
+                                       (now - t).total_seconds() / 3600.0)
     return out
 
 
@@ -56,6 +59,8 @@ def main():
     p.add_argument("--token", help="optional Socrata app token")
     p.add_argument("--only-hours", help="collect only within this local window, e.g. 8-18")
     p.add_argument("--only-weekdays", action="store_true", help="skip Saturday and Sunday")
+    p.add_argument("--stale-hours", type=float, default=24.0,
+                   help="flag a state older than this in lowercase")
     a = p.parse_args()
 
     # Gate on LOS ANGELES local time, not UTC, so the window holds across DST.
@@ -97,8 +102,22 @@ def main():
         print(f"{now} poll failed: {e}", file=sys.stderr)
         return 1
 
-    line = "".join("V" if states.get(s) == "VACANT" else
-                   "O" if states.get(s) == "OCCUPIED" else "?" for s in ids)
+    # The feed reports the LAST KNOWN state and never expires it, so a dead
+    # sensor keeps asserting whatever it last saw. Anything that has not posted
+    # a transition in --stale-hours is written lowercase: still recorded, but
+    # flagged so the analysis can weigh or drop it. A genuinely parked car does
+    # sit unchanged overnight, so the threshold is a day, not a few hours.
+    def ch(s):
+        v = states.get(s)
+        if v is None:
+            return "?"
+        state, age = v
+        if state == "VACANT":
+            return "v" if age > a.stale_hours else "V"
+        if state == "OCCUPIED":
+            return "o" if age > a.stale_hours else "O"
+        return "?"                      # the feed's own UNKNOWN state
+    line = "".join(ch(s) for s in ids)
 
     path = os.path.join(out_dir, f"{day}.csv")
     new = not os.path.exists(path)
@@ -107,8 +126,11 @@ def main():
             f.write("polled_at_utc,states\n")
         f.write(f"{now},{line}\n")
 
-    vac, occ, unk = line.count("V"), line.count("O"), line.count("?")
-    print(f"{now}  {vac} vacant / {occ} occupied" + (f" / {unk} no report" if unk else ""))
+    vac, occ = line.count("V") + line.count("v"), line.count("O") + line.count("o")
+    stale, unk = line.count("v") + line.count("o"), line.count("?")
+    print(f"{now}  {vac} vacant / {occ} occupied"
+          + (f" / {stale} stale" if stale else "")
+          + (f" / {unk} unknown" if unk else ""))
     return 0
 
 

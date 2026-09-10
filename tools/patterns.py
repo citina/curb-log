@@ -66,6 +66,8 @@ def main():
     p.add_argument("--hours", default="7-21")
     p.add_argument("--min-polls", type=int, default=3, help="hide cells thinner than this")
     p.add_argument("--json")
+    p.add_argument("--exclude-stale", action="store_true",
+                   help="drop states the feed had not refreshed in a day")
     a = p.parse_args()
 
     ids, rows = load(a.data_dir)
@@ -81,11 +83,20 @@ def main():
         idx[c].append(i)
 
     # (cluster, dow, hour) -> [n_polls, sum_free, n_polls_with_zero_free]
+    # Lowercase v/o mark a state the feed had not refreshed in a day: recorded,
+    # but possibly a dead sensor asserting a stale reading.
     agg = collections.defaultdict(lambda: [0, 0, 0])
+    stale_obs = total_obs = 0
     for t, states in rows:
         for c, cols in idx.items():
-            free = sum(1 for i in cols if states[i] == "V")
-            known = sum(1 for i in cols if states[i] != "?")
+            if a.exclude_stale:
+                free = sum(1 for i in cols if states[i] == "V")
+                known = sum(1 for i in cols if states[i] in "VO")
+            else:
+                free = sum(1 for i in cols if states[i] in "Vv")
+                known = sum(1 for i in cols if states[i] in "VOvo")
+            stale_obs += sum(1 for i in cols if states[i] in "vo")
+            total_obs += len(cols)
             if not known:
                 continue
             k = (c, t.weekday(), t.hour)
@@ -98,7 +109,12 @@ def main():
     hours = list(range(h0, h1))
     span = f"{rows[0][0]:%a %d %b %H:%M} to {rows[-1][0]:%a %d %b %H:%M}"
     print(f"{len(rows):,} polls · {len(ids)} spaces · {len(clusters)} clusters")
-    print(f"{span} (local)\n")
+    print(f"{span} (local)")
+    if total_obs:
+        print(f"{stale_obs/total_obs*100:.1f}% of observations were stale "
+              f"(no sensor transition for over a day)"
+              + (" — excluded" if a.exclude_stale else " — included; use --exclude-stale to drop"))
+    print()
 
     if a.cluster:
         c = a.cluster
@@ -124,14 +140,14 @@ def main():
             print(f"{DOW[d]:<5}" + "".join(cells))
     else:
         # Weekday daytime ranking: where should you drive first?
-        print("WEEKDAYS, 8am-6pm — ranked by how many spaces are typically free")
+        print("WEEKDAYS, 8am-5pm — ranked by how many spaces are typically free")
         print(f"{'CLUSTER':<22}{'SPACES':>7}{'MEAN FREE':>11}{'% FREE':>8}{'EMPTY':>7}{'POLLS':>7}")
         print("-" * 62)
         out = []
         for c in clusters:
             n = s = z = 0
             for d in range(5):
-                for h in range(8, 18):
+                for h in range(8, 17):
                     cn, cs, cz = agg.get((c, d, h), [0, 0, 0])
                     n += cn; s += cs; z += cz
             if n:
