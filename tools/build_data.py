@@ -59,11 +59,22 @@ def period_of(d):
     return None
 
 
+def parse_window(s):
+    """'8-16:30' -> (480, 990): minutes after local midnight, end exclusive."""
+    def mins(x):
+        h, _, m = x.partition(":")
+        return int(h) * 60 + int(m or 0)
+    lo, hi = s.split("-")
+    return mins(lo), mins(hi)
+
+
 class Acc:
-    """(period, cluster, dow, slot) -> [observed_s, vacant_space_s, empty_s, {dates}]"""
+    """(period, cluster, dow, slot) -> [observed_s, vacant_space_s, empty_s, {dates}]
+
+    The window is in minutes after local midnight."""
 
     def __init__(self, win_start, win_end, slot_min):
-        self.ws, self.we, self.slot = win_start * 60, win_end * 60, slot_min
+        self.ws, self.we, self.slot = win_start, win_end, slot_min
         self.cells = collections.defaultdict(lambda: [0.0, 0.0, 0.0, set()])
         self.days = collections.defaultdict(set)
         self.sources = collections.defaultdict(set)
@@ -186,14 +197,15 @@ def load_polls(data_dir, cluster_spaces, acc, hold_min, skip_dates):
 
 
 def slot_label(ws, slot, k):
-    m = ws * 60 + k * slot
+    m = ws + k * slot
     h, mm = divmod(m, 60)
     return f"{h % 12 or 12}:{mm:02d}{'a' if h < 12 else 'p'}"
 
 
 def report(payload):
-    ws, we, sl = payload["window_start"], payload["window_end"], payload["slot_min"]
-    nslot = (we - ws) * 60 // sl
+    ws, we = round(payload["window_start"] * 60), round(payload["window_end"] * 60)
+    sl = payload["slot_min"]
+    nslot = (we - ws) // sl
     for pr in payload["periods"]:
         print(f"\n=== {pr['label']} · {pr['days']} weekdays · {'+'.join(pr['sources'])} ===")
         for c, info in payload["clusters"].items():
@@ -221,7 +233,7 @@ def main():
     p.add_argument("--archive", default="usc_*.csv", help="glob of LADOT archive extracts")
     p.add_argument("--archive-cache", default="archive_cells.json")
     p.add_argument("--data-dir", default="data")
-    p.add_argument("--window", default="8-16", help="grid hours, local time")
+    p.add_argument("--window", default="8-16:30", help="grid window, local time, e.g. 8-16:30")
     p.add_argument("--slot", type=int, default=30, help="minutes per cell")
     p.add_argument("--stale-hours", type=float, default=24)
     p.add_argument("--hold", type=float, default=10, help="max minutes a poll snapshot is held")
@@ -229,7 +241,7 @@ def main():
     p.add_argument("--report", action="store_true")
     a = p.parse_args()
 
-    ws, we = (int(x) for x in a.window.split("-"))
+    ws, we = parse_window(a.window)
     ids = [l.strip() for l in open(a.ids) if l.strip()]
     meta = json.load(open(a.spaces))
     cluster_spaces = collections.defaultdict(list)
@@ -244,6 +256,18 @@ def main():
     # keeps the rest instead of silently dropping it.
     cache = json.load(open(a.archive_cache)) if os.path.exists(a.archive_cache) else {}
     files = cache.get("files", {})
+    # Cached cells are cut to one window and slot ([start_min, end_min, slot_min];
+    # an unstamped cache predates the stamp and was cut to 8-16). Reusing one cut
+    # to another grid would leave the new columns silently empty, so a mismatched
+    # cache is only usable if every extract in it is here to recompute.
+    grid = [ws, we, a.slot]
+    if files and cache.get("grid", [480, 960, 30]) != grid:
+        here = {os.path.basename(p) for p in glob.glob(a.archive)}
+        gone = sorted(set(files) - here)
+        if gone:
+            sys.exit(f"{a.archive_cache} is cut to grid {cache.get('grid', [480, 960, 30])}, not {grid}, "
+                     f"and {', '.join(gone)} isn't here to recompute. Fetch it with fetch_history.py first.")
+        files = {}
     for path in sorted(glob.glob(a.archive)):
         one = Acc(ws, we, a.slot)
         dates = load_archive([path], cluster_spaces, one, a.stale_hours)
@@ -262,7 +286,7 @@ def main():
             acc.days[per].update(v[3])
             acc.sources[per].add("archive")
     if files:
-        json.dump({"files": files}, open(a.archive_cache, "w"), separators=(",", ":"))
+        json.dump({"grid": grid, "files": files}, open(a.archive_cache, "w"), separators=(",", ":"))
         print(f"  archive extracts in cache: {', '.join(sorted(files))}", file=sys.stderr)
     load_polls(a.data_dir, cluster_spaces, acc, a.hold, covered)
 
@@ -287,7 +311,10 @@ def main():
         # the newest data inside, in LA local time — not the build clock, so a
         # rebuild with no new data is byte-identical and there is nothing to commit
         "data_through": through.isoformat(timespec="minutes") if through else None,
-        "window_start": ws, "window_end": we, "slot_min": a.slot,
+        # hours, fractional when the window ends on a half hour (16.5 = 4:30pm)
+        "window_start": ws // 60 if ws % 60 == 0 else ws / 60,
+        "window_end": we // 60 if we % 60 == 0 else we / 60,
+        "slot_min": a.slot,
         "cell_format": ["observed_seconds", "vacant_space_seconds", "empty_seconds", "days"],
         "term_start": "2026-08-24", "sensors_live": "2026-05-12",
         "clusters": {c: {"n_spaces": len(ss), "spaces": ss, "centroid": centroid(c),

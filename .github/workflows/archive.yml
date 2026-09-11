@@ -1,0 +1,74 @@
+name: fold in new archive months
+
+# LADOT publishes each month of its sensor archive (cj8s-ivry) about two months
+# late, on no fixed day. Once a day this looks for published months missing
+# from tools/archive_cells.json, streams just our spaces out of each
+# (fetch_history.py), and adds their cells to the cache. The extracts stay out
+# of git; the cache is what the page is built from.
+on:
+  schedule:
+    - cron: "23 15 * * *"   # best-effort, which is fine here: a late run delays a month by a day
+  workflow_dispatch:
+
+concurrency:
+  group: archive
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: write            # to start the Pages deploy when docs/data.json changes
+
+jobs:
+  fold:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch months the cache lacks
+        id: fetch
+        working-directory: tools
+        run: |
+          new=""
+          for m in $(python3 fetch_history.py --list | sed 's/^Published months: //; s/,/ /g'); do
+            [[ "$m" < "2026-07" ]] && continue      # May-June are in usc_may_jun.csv; nothing earlier exists
+            f="usc_${m/-/_}.csv"
+            grep -q "\"$f\"" archive_cells.json && continue
+            python3 fetch_history.py --ids sensored_ids.txt --months "$m" --out "$f"
+            new="$new $m"
+          done
+          echo "new=${new# }" >> "$GITHUB_OUTPUT"
+
+      # tools/publisher.txt names the one writer of docs/data.json; while it is
+      # the laptop, only the cache is committed and the laptop folds it in.
+      - name: Rebuild the cache
+        if: steps.fetch.outputs.new != ''
+        working-directory: tools
+        run: |
+          if [ "$(cat publisher.txt)" = ci ]; then out=../docs/data.json; else out=/tmp/data.json; fi
+          python3 build_data.py --out "$out"
+
+      - name: Commit and push
+        if: steps.fetch.outputs.new != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name  "curb-log bot"
+          git config user.email "noreply@github.com"
+          git add tools/archive_cells.json docs/data.json
+          if git diff --cached --quiet; then
+            echo "nothing new"; exit 0
+          fi
+          git diff --cached --quiet -- docs && docs=no || docs=yes
+          git commit -m "archive: fold in ${{ steps.fetch.outputs.new }}"
+          for i in 1 2 3; do
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && \
+               git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              if [ "$docs" = yes ]; then gh workflow run pages.yml --ref "${GITHUB_REF_NAME}"; fi
+              exit 0
+            fi
+            sleep $((RANDOM % 10 + 5))
+          done
+          echo "could not push after 3 attempts"; exit 1

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install (or reinstall) the 10-minute LADOT occupancy poller as a LaunchAgent.
+# Install (or reinstall) the 5-minute LADOT occupancy poller as a LaunchAgent.
 set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LABEL="com.citina.curblog.poll"
@@ -19,7 +19,7 @@ cat > "$PLIST" <<PLISTEOF
     <string>--ids</string><string>$DIR/sensored_ids.txt</string>
     <string>--data-dir</string><string>$DIR/data</string>
     <string>--collector</string><string>laptop</string>
-    <string>--only-hours</string><string>8-17</string>
+    <string>--only-hours</string><string>8-16:30</string>
     <string>--only-weekdays</string>
   </array>
   <key>WorkingDirectory</key><string>$DIR</string>

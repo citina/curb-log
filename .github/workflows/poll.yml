@@ -1,13 +1,11 @@
 name: poll parking occupancy
 
-# Every 5 minutes. GitHub does not guarantee punctuality for scheduled
-# workflows and will drop runs under load, so treat this as best-effort
-# coverage — patterns.py reports polls-per-cell precisely because of that.
+# Started every 5 minutes, weekdays 8:00-16:55 Los Angeles, by an outside
+# scheduler (cron-job.org) calling GitHub's workflow_dispatch API. GitHub's own
+# cron is not used: on this repo it fired 3 times in 19 hours. poll_live.py
+# applies the exact 8:00-16:30 window, so the runs after 16:30 poll nothing;
+# the 16:30 run still publishes the day's last half hour (below).
 on:
-  schedule:
-    # 8am-6pm Los Angeles, Mon-Fri. The UTC range covers both PDT and PST;
-    # poll_live.py does the exact local-time gate.
-    - cron: "*/5 14-23,0-1 * * 1-6"
   workflow_dispatch:
 
 # Never let two runs push at once.
@@ -17,6 +15,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write            # to start the Pages deploy when docs/data.json changes
 
 jobs:
   poll:
@@ -28,23 +27,39 @@ jobs:
 
       - name: Poll LADOT
         working-directory: tools
-        run: python3 poll_live.py --ids sensored_ids.txt --data-dir data --collector ci --only-hours 8-17 --only-weekdays
+        run: python3 poll_live.py --ids sensored_ids.txt --data-dir data --collector ci --only-hours 8-16:30 --only-weekdays
+
+      # tools/publisher.txt names the one writer of docs/data.json. While it says
+      # "laptop", CI only appends its own polls. Once it says "ci", the :00 and
+      # :30 runs rebuild the page data.
+      - name: Rebuild page data
+        working-directory: tools
+        run: |
+          if [ "$(cat publisher.txt)" != ci ]; then echo "publisher is $(cat publisher.txt)"; exit 0; fi
+          m=$(TZ=America/Los_Angeles date +%M)
+          if [ $((10#$m % 30)) -ge 5 ]; then echo "rebuilds only on the :00 and :30 runs"; exit 0; fi
+          python3 build_data.py --out ../docs/data.json
 
       - name: Commit the snapshot
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name  "curb-log bot"
           git config user.email "noreply@github.com"
-          # CI only appends its own polls. The laptop publisher (tools/publish.sh)
-          # is the one thing that rebuilds docs/data.json, so the two never collide.
-          git add tools/data/ci
+          git add tools/data/ci docs/data.json tools/archive_cells.json
           if git diff --cached --quiet; then
             echo "nothing new"; exit 0
           fi
+          git diff --cached --quiet -- docs && docs=no || docs=yes
           git commit -m "poll $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           # Another run may have pushed while we worked; rebase and retry.
           for i in 1 2 3; do
-            git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && \
-            git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && \
+               git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              # A push made with this token doesn't trigger pages.yml, so start it.
+              if [ "$docs" = yes ]; then gh workflow run pages.yml --ref "${GITHUB_REF_NAME}"; fi
+              exit 0
+            fi
             sleep $((RANDOM % 10 + 5))
           done
           echo "could not push after 3 attempts"; exit 1

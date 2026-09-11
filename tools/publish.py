@@ -10,9 +10,10 @@ shell, which tags files com.apple.provenance; logs launchd creates itself carry
 com.apple.macl and work. Delete the log and let launchd recreate it — never
 create or truncate it by hand.
 
-This is the only writer of docs/data.json; CI appends to tools/data/ci/ and
-nothing else, so the two never conflict. Commits are pathspec-limited, so
-nothing else staged in this working copy is ever swept up.
+tools/publisher.txt names the one writer of docs/data.json. While it says
+"laptop", this is that writer and CI appends to tools/data/ci/ and nothing else,
+so the two never conflict; once it says "ci", this does nothing. Commits are
+pathspec-limited, so nothing else staged in this working copy is ever swept up.
 """
 import os, subprocess, sys, time
 
@@ -35,6 +36,10 @@ def main():
     except subprocess.CalledProcessError as e:
         log("pull failed: " + (e.stderr or "").strip()[:200])
         return 1
+    who = open(os.path.join(ROOT, "tools", "publisher.txt")).read().strip()
+    if who != "laptop":
+        log(f"publisher.txt says {who}; the laptop does not publish")
+        return 0
     r = subprocess.run([sys.executable, "build_data.py", "--out", "../docs/data.json"],
                        cwd=os.path.join(ROOT, "tools"), capture_output=True, text=True)
     if r.returncode:

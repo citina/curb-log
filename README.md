@@ -91,29 +91,70 @@ per space — and the event log was dropped rather than shipped with a known bia
 
 ### Collection
 
-**The laptop is the real collector.** `install_poller.sh` installs two launchd
-jobs: the poller (every 5 minutes, weekdays 8am-5pm Los Angeles, into
-`tools/data/laptop/`) and the publisher (`publish.py`, every 30 minutes), which
-pulls, rebuilds `docs/data.json`, and pushes. It is the only thing that rewrites
-the page's data; commits are pathspec-limited so nothing else in the working
-copy is swept up, and `data_through` is stamped from the newest data rather than
-the clock, so a rebuild with nothing new produces no commit.
+Polling runs weekdays **8:00am–4:30pm Los Angeles**, the same window as the grid
+(`--only-hours 8-16:30`, `--window 8-16:30`; the end is exclusive, so the last
+poll of the day is at 4:25).
 
-`.github/workflows/poll.yml` also polls on a 5-minute cron into `tools/data/ci/`,
-but treat it as a bonus: **GitHub fired that schedule three times in the first
-nineteen hours.** Scheduled workflows are documented as best-effort and are
-throttled hard on new repositories. Manual (`workflow_dispatch`) runs are
-reliable; schedules are not a clock.
+**GitHub polls, started from outside.** `.github/workflows/poll.yml` has no
+schedule of its own: GitHub's cron fired three times in this repo's first
+nineteen hours, and only three times inside the window on the first full day.
+Scheduled workflows are best-effort and throttled hard on new repositories;
+`workflow_dispatch` runs are not. So cron-job.org calls the dispatch API every
+five minutes, and each run appends one line to `tools/data/ci/`:
 
-Polling stops while the Mac sleeps, and that missingness is not random — it
-tracks the working day. Every cell therefore carries the number of days behind
+| cron-job.org setting | value |
+|---|---|
+| URL | `https://api.github.com/repos/citina/curb-log/actions/workflows/poll.yml/dispatches` |
+| Method | `POST` |
+| Headers | `Accept: application/vnd.github+json` · `Authorization: Bearer <token>` · `X-GitHub-Api-Version: 2022-11-28` |
+| Body | `{"ref":"main"}` |
+| Schedule | every 5 minutes, hours 8–16, Monday–Friday, time zone America/Los_Angeles |
+| Success | HTTP 204 |
+
+The token is a fine-grained one limited to this repository with Actions: read and
+write, and it lives only in cron-job.org. It expires on the date picked when it
+was made, and polling stops when it does, so renew it before then. The dispatches
+after 4:30 poll nothing (`poll_live.py` applies the exact window), but the 4:30
+one still publishes the day's last half hour.
+
+**One writer.** `tools/publisher.txt` names the only thing that rebuilds
+`docs/data.json`: `laptop` or `ci`. While it says `laptop`, the laptop publisher
+builds the page and CI only appends polls. When it says `ci`, the :00 and :30 poll
+runs rebuild it and `publish.py` does nothing. `archive.yml` obeys the same file.
+`data_through` is stamped from the newest data rather than the clock, so a
+rebuild with nothing new produces no commit.
+
+**The laptop, until cutover.** `install_poller.sh` installs two launchd jobs: the
+poller (every 5 minutes, into `tools/data/laptop/`) and the publisher
+(`publish.py`, every 30 minutes), which pulls, rebuilds `docs/data.json`, and
+pushes, with pathspec-limited commits so nothing else in the working copy is
+swept up. Both run only while the Mac is awake: on 10 September it took 65 of
+108 five-minute polls. Once `tools/data/ci/` shows a full weekday at about 12
+polls an hour (`cut -c12-13 tools/data/ci/<day>.csv | sort | uniq -c` counts
+them per UTC hour; 8am–4:30pm PDT is 15:00–23:30 UTC), cut over:
+
+1. `./publish.py` once, so the laptop's last polls are pushed.
+2. Set `tools/publisher.txt` to `ci`; commit and push.
+3. `launchctl bootout gui/$(id -u)/com.citina.curblog.poll` and the same for
+   `com.citina.curblog.publish`, then delete both plists from
+   `~/Library/LaunchAgents`.
+
+**The page deploys from `.github/workflows/pages.yml`**, not GitHub's branch
+build, so only a change under `docs/` publishes it; under the branch build every
+5-minute poll commit rebuilt the site, past Pages' soft limit of 10 builds an
+hour. Pushes made with `GITHUB_TOKEN` don't trigger other workflows, so
+`poll.yml` and `archive.yml` start the deploy themselves when they change
+`docs/data.json`.
+
+Gaps in polling (a sleeping Mac, a dropped dispatch) are not random — they
+track the working day. Every cell therefore carries the number of days behind
 it, and unobserved time is shown as unmeasured, never as quiet. None of this is
 permanent: LADOT's archive backfills every day exactly, about two months later.
 
 ### Periods are never blended
 
 `build_data.py` combines the archive and the polls into one grid of weekday x
-half-hour cells from 8am to 4pm, segmented by period:
+half-hour cells from 8am to 4:30pm, segmented by period:
 
 | Period | From | Source |
 |---|---|---|
@@ -127,8 +168,15 @@ contrast, not a forecast.
 
 The archive contribution is cached per extract file in `tools/archive_cells.json`,
 so a run holding only some extracts (a new month arriving alone) recomputes what
-it has and keeps the rest. When a month publishes: `fetch_history.py` it into
-`tools/usc_YYYY_MM.csv`, and the next publisher run folds it in.
+it has and keeps the rest. `.github/workflows/archive.yml` checks daily for
+newly published months, streams each into `tools/usc_YYYY_MM.csv` with
+`fetch_history.py`, and commits the updated cache; the next build folds it in.
+
+The cache is stamped with the window and slot its cells were cut to. Changing
+`--window` or `--slot` needs every extract in the cache present to recompute —
+`build_data.py` stops with a message rather than leave the new columns empty.
+`usc_may_jun.csv` exists only on the laptop; `fetch_history.py` re-streams any
+month.
 
 Validation of polling against the archive needs *overlapping* days. Polling began
 9 September, so the first overlap arrives with the September file (~early

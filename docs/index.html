@@ -110,7 +110,7 @@
   .label{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}
   .label .name{font-size:13px;font-weight:600}
   .label .aside{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
-  input[type=number],input[type=date]{width:100%;font-family:inherit;font-size:15px;background:var(--surface);
+  input[type=time],input[type=date]{width:100%;font-family:inherit;font-size:15px;background:var(--surface);
     color:var(--ink);border:1px solid var(--edge);border-radius:9px;padding:9px 11px;min-height:42px}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .blockrow{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--rule)}
@@ -161,7 +161,7 @@
 
 var DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 var LIVE = "https://data.lacity.org/resource/e7h6-4a3e.json";
-var LS = "curblog.basis.v1";
+var LS = "curblog.basis.v2";
 
 var S = {
   view: "pattern",
@@ -176,7 +176,15 @@ var S = {
 };
 
 function el(t, c, h) { var e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; }
-function hourLabel(h) { return (h % 12 === 0 ? 12 : h % 12) + (h < 12 ? "a" : "p"); }
+/* hours may be fractional: 16.5 is 4:30pm */
+function hourLabel(h) {
+  var m = Math.round(h * 60), hh = Math.floor(m / 60), mm = m % 60;
+  return (hh % 12 === 0 ? 12 : hh % 12) + (mm ? ":" + (mm < 10 ? "0" : "") + mm : "") + (hh < 12 ? "a" : "p");
+}
+function hhmm(h) {                     // 16.5 -> "16:30", for time inputs
+  var m = Math.round(h * 60), hh = Math.floor(m / 60), mm = m % 60;
+  return (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
+}
 function throughLabel(iso) {           // "2026-09-10T10:29", already LA local
   var p = iso.split(/[-T:]/).map(Number), d = new Date(p[0], p[1] - 1, p[2]);
   var h = p[3], mm = p[4];
@@ -221,8 +229,8 @@ function cellIn(period, cluster, dow, slot) {
   return { meanFree: v[1] / v[0], zeroShare: v[2] / v[0], days: v[3] };
 }
 function cell(cluster, dow, slot) { return cellIn(curPeriod(), cluster, dow, slot); }
-function nSlots() { return (S.data.window_end - S.data.window_start) * 60 / S.data.slot_min; }
-function slotStartMin(k) { return S.data.window_start * 60 + k * S.data.slot_min; }
+function nSlots() { return Math.round((S.data.window_end - S.data.window_start) * 60 / S.data.slot_min); }
+function slotStartMin(k) { return Math.round(S.data.window_start * 60) + k * S.data.slot_min; }
 function slotLabel(k) {
   var m = slotStartMin(k), h = Math.floor(m / 60), mm = m % 60;
   return (h % 12 === 0 ? 12 : h % 12) + ":" + (mm < 10 ? "0" : "") + mm + (h < 12 ? "a" : "p");
@@ -288,10 +296,12 @@ function fetchLive() {
 function defaultBasis() {
   var cs = {};
   Object.keys(S.data.clusters).forEach(function (c) { cs[c] = true; });
-  return { clusters: cs, hourStart: 8, hourEnd: 17, weekdaysOnly: true, until: "" };
+  /* collection and the grid share one window, so what's running is what data.json says */
+  return { clusters: cs, timeStart: hhmm(S.data.window_start), timeEnd: hhmm(S.data.window_end),
+           weekdaysOnly: true, until: "" };
 }
 function loadBasis() {
-  try { var v = JSON.parse(localStorage.getItem(LS)); if (v && v.clusters) return v; } catch (e) {}
+  try { var v = JSON.parse(localStorage.getItem(LS)); if (v && v.clusters && v.timeStart) return v; } catch (e) {}
   return null;
 }
 function saveBasis() { try { localStorage.setItem(LS, JSON.stringify(S.basis)); } catch (e) {} }
@@ -300,7 +310,7 @@ function saveBasis() { try { localStorage.setItem(LS, JSON.stringify(S.basis)); 
    act. Dirty state is shown plainly rather than pretending it took effect. */
 function basisDirty() {
   var d = defaultBasis();
-  if (S.basis.hourStart !== d.hourStart || S.basis.hourEnd !== d.hourEnd) return true;
+  if (S.basis.timeStart !== d.timeStart || S.basis.timeEnd !== d.timeEnd) return true;
   if (S.basis.weekdaysOnly !== d.weekdaysOnly) return true;
   if (S.basis.until) return true;
   return Object.keys(d.clusters).some(function (c) { return !S.basis.clusters[c]; });
@@ -584,13 +594,12 @@ function viewBasis() {
   w.appendChild(el("h2", null, "What range"));
   w.appendChild(el("p", "hint", "Hours of the day to collect, Los Angeles time. Narrower means fewer polls but nothing outside it is recorded at all."));
   var r2 = el("div", "row2");
-  [["hourStart", "From"], ["hourEnd", "Until"]].forEach(function (p) {
+  [["timeStart", "From"], ["timeEnd", "Until"]].forEach(function (p) {
     var fl = el("div");
     fl.appendChild(el("div", "label", "<span class='name'>" + p[1] + "</span>"));
-    var inp = el("input"); inp.type = "number"; inp.min = 0; inp.max = 24; inp.value = S.basis[p[0]];
+    var inp = el("input"); inp.type = "time"; inp.step = 1800; inp.value = S.basis[p[0]];
     inp.onchange = function () {
-      var v = parseInt(inp.value, 10);
-      if (!isNaN(v) && v >= 0 && v <= 24) { S.basis[p[0]] = v; saveBasis(); render(); }
+      if (/^\d\d:\d\d$/.test(inp.value)) { S.basis[p[0]] = inp.value; saveBasis(); render(); }
     };
     fl.appendChild(inp);
     r2.appendChild(fl);
@@ -636,7 +645,7 @@ function viewBasis() {
   var pre = el("pre", "cfg");
   pre.textContent = JSON.stringify({
     clusters: Object.keys(S.basis.clusters).filter(function (c) { return S.basis.clusters[c]; }),
-    hours: [S.basis.hourStart, S.basis.hourEnd],
+    hours: [S.basis.timeStart, S.basis.timeEnd],
     weekdaysOnly: S.basis.weekdaysOnly,
     until: S.basis.until || null
   }, null, 2);

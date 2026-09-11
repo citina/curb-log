@@ -51,13 +51,22 @@ def fetch(ids, token=None):
     return out
 
 
+def parse_window(s):
+    """'8-16:30' -> (480, 990): minutes after local midnight, end exclusive."""
+    def mins(x):
+        h, _, m = x.partition(":")
+        return int(h) * 60 + int(m or 0)
+    lo, hi = s.split("-")
+    return mins(lo), mins(hi)
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--ids", default="sensored_ids.txt")
     p.add_argument("--data-dir", default="data")
     p.add_argument("--collector", default="laptop", help="who is polling; names the subdirectory")
     p.add_argument("--token", help="optional Socrata app token")
-    p.add_argument("--only-hours", help="collect only within this local window, e.g. 8-18")
+    p.add_argument("--only-hours", help="collect only within this local window, e.g. 8-16:30")
     p.add_argument("--only-weekdays", action="store_true", help="skip Saturday and Sunday")
     p.add_argument("--stale-hours", type=float, default=24.0,
                    help="flag a state older than this in lowercase")
@@ -69,9 +78,9 @@ def main():
         print(f"{now_la:%Y-%m-%d %H:%M %Z}: weekend, not collecting")
         return 0
     if a.only_hours:
-        lo, hi = (int(x) for x in a.only_hours.split("-"))
-        if not (lo <= now_la.hour < hi):
-            print(f"{now_la:%Y-%m-%d %H:%M %Z}: outside {lo}-{hi}, not collecting")
+        lo, hi = parse_window(a.only_hours)
+        if not (lo <= now_la.hour * 60 + now_la.minute < hi):
+            print(f"{now_la:%Y-%m-%d %H:%M %Z}: outside {a.only_hours}, not collecting")
             return 0
 
     ids = [l.strip() for l in open(a.ids) if l.strip()]
