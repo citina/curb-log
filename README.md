@@ -47,27 +47,15 @@ term-time history exists. That is why `poll_live.py` exists.
 
 ### How "spaces free" is computed
 
-The archive is an event log: each row says a space became VACANT or OCCUPIED at
-an exact second, and between events its state is known and constant. For each
-cluster, `build_data.py` sweeps the merged events in time order keeping a running
-count of vacant spaces, splits every stretch of constant state at 30-minute cell
-boundaries, and credits each cell with vacant space-seconds, observed seconds,
-and seconds with none free. So a cell's
-
-- **mean spaces free** = vacant space-seconds / observed seconds — the exact
-  average across that half hour, not an estimate from samples;
-- **none free** = seconds with zero free / observed seconds — the chance that
-  arriving at a random moment in that half hour finds nothing.
-
-Against the earlier 15-minute sampling the exact figures differ by 0.28 spaces
-on average (80 summer hour-cells) — close, but sampling gives a half-hour cell
-only two readings a day, which is why the exact method matters at this
-resolution. A sensor silent over 24 hours drops out of the count.
-
-Polls are snapshots, not events, so each is held forward until the next one,
-capped at 10 minutes: a gap becomes unobserved time rather than being papered
-over. Wherever the archive covers a day, it is used and polls for that day are
-ignored.
+**[docs/METHOD.md](docs/METHOD.md) is the one full account**, plain language
+first. In short: LADOT logs an event only when a space changes state, so every
+space's state is known at every second, and each half-hour cell is an exact
+average over that record, not a sample. Mean free = the share of *known*
+sensor-time that was vacant × the spaces in the stretch, so a space we can't see
+is never counted as occupied. A sensor silent for 72 hours drops out, a stretch
+of time counts only while 80% of a cluster's sensors are known, and USC holidays
+and non-teaching days are left out. Polls stand in, held forward at most 10
+minutes, until the archive covers a day.
 
 ### Why snapshots, not an event log
 
@@ -164,7 +152,8 @@ half-hour cells from 8am to 4:30pm, segmented by period:
 They are aggregated separately and never averaged together. On these exact
 spaces midday vacancy ran ~49% in summer and ~6% in term; a blended figure is
 worse than either. The page shows one period at a time and labels summer as a
-contrast, not a forecast.
+contrast, not a forecast. USC holidays and non-teaching days are left out of
+both ([list](docs/METHOD.md#days-left-out)).
 
 The archive contribution is cached per extract file in `tools/archive_cells.json`,
 so a run holding only some extracts (a new month arriving alone) recomputes what
@@ -172,9 +161,12 @@ it has and keeps the rest. `.github/workflows/archive.yml` checks daily for
 newly published months, streams each into `tools/usc_YYYY_MM.csv` with
 `fetch_history.py`, and commits the updated cache; the next build folds it in.
 
-The cache is stamped with the window and slot its cells were cut to. Changing
-`--window` or `--slot` needs every extract in the cache present to recompute —
-`build_data.py` stops with a message rather than leave the new columns empty.
+The cache is stamped with the window and slot its cells were cut to and the
+method they were swept with (`--stale-hours`, `--min-known`). Changing any of
+them needs every extract in the cache present to recompute — `build_data.py`
+stops with a message rather than leave columns empty or mix two methods.
+Holidays and periods are applied when days are summed, so editing those needs
+no recompute.
 `usc_may_jun.csv` exists only on the laptop; `fetch_history.py` re-streams any
 month.
 
@@ -199,9 +191,6 @@ November); August's file cannot validate anything.
   the question.
 - **LADOT block faces are not decision units.** Vermont between 36th and 38th is
   six separate block faces (77 metered spaces, 65 sensored) that the parking app
-  shows as one location, and that you drive as one stretch. `patterns.py`
+  shows as one location, and that you drive as one stretch. `build_data.py`
   therefore clusters both sides of a hundred-block: Vermont 36xx is the 44
   sensored spaces across 3600/3601/3650/3651.
-- `curb-log.html` is a manual tracker, now a fallback: it captures max payable
-  duration and the unsensored blocks (Jefferson Blvd, most of Figueroa), neither
-  of which appear in the sensor feed.

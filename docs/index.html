@@ -70,9 +70,10 @@
   .verdict .rows{margin-top:14px;border-top:1px solid rgba(255,255,255,.14);padding-top:12px;
                  display:grid;gap:8px}
   .vrow{display:flex;align-items:baseline;gap:10px;font-size:13px}
-  .vrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--panel-ink)}
-  .vrow .big{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;color:var(--panel-ink)}
-  .vrow .cmp{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--panel-ink-2);width:118px;text-align:right}
+  .vrow .nm{flex:1;min-width:0;color:var(--panel-ink)}
+  .vrow .big{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;color:var(--panel-ink);
+             min-width:1.4em;text-align:right}
+  .vrow .cmp{font-size:12.5px;color:var(--panel-ink-2);margin-top:1px}
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:1px;background:var(--rule);
          border:1px solid var(--rule);border-radius:12px;overflow:hidden;margin-bottom:14px}
   .stat{background:var(--surface);padding:12px 13px}
@@ -136,7 +137,7 @@
   .foot a{color:var(--ink-2)}
   [hidden]{display:none!important}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-  @media (max-width:420px){.verdict .headline{font-size:24px}.vrow .cmp{width:96px}}
+  @media (max-width:420px){.verdict .headline{font-size:24px}}
 </style>
 </head>
 <body>
@@ -167,7 +168,7 @@ var S = {
   view: "pattern",
   period: null,      // which period's grid is on screen
   data: null,        // data.json, published by CI
-  live: null,        // {cluster: {free, occ, stale, unknown, total, newestAgeMin}}
+  live: null,        // {cluster: {free, occ, unknown, total, newest}}
   liveErr: null,
   liveAt: null,
   basis: null,       // the user's edited basis (local until applied)
@@ -193,6 +194,10 @@ function throughLabel(iso) {           // "2026-09-10T10:29", already LA local
     (h % 12 === 0 ? 12 : h % 12) + ":" + (mm < 10 ? "0" : "") + mm + (h < 12 ? "a" : "p");
 }
 function fmt1(n) { return (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, ""); }
+/* data.json keys the clusters by LADOT's block-face shorthand ("VERMONT AVE 36xx");
+   these are the names the page shows */
+var PLACE = { "VERMONT AVE 36xx": "Vermont Ave, 36th to 37th St", "36TH ST 11xx": "36th St, west of Vermont" };
+function place(c) { return PLACE[c] || c; }
 
 /* LA local time, wherever the phone happens to be */
 function laNow() {
@@ -277,14 +282,13 @@ function fetchLive() {
       rows.forEach(function (r) { by[r.spaceid] = r; });
       var now = Date.now(), out = {};
       Object.keys(S.data.clusters).forEach(function (c) {
-        var o = { free: 0, occ: 0, stale: 0, unknown: 0, total: 0, newest: Infinity };
+        var o = { free: 0, occ: 0, unknown: 0, total: 0, newest: Infinity };
         S.data.clusters[c].spaces.forEach(function (sid) {
           var r = by[sid];
           o.total++;
           if (!r) { o.unknown++; return; }
           var ageMin = (now - Date.parse(r.eventtime + "Z")) / 60000;
           if (ageMin < o.newest) o.newest = ageMin;
-          if (ageMin > 24 * 60) o.stale++;
           if (r.occupancystate === "VACANT") o.free++;
           else if (r.occupancystate === "OCCUPIED") o.occ++;
           else o.unknown++;
@@ -337,6 +341,7 @@ function render() {
   document.getElementById("foot").innerHTML =
     "Sensor data from LADOT via <a href='https://data.lacity.org/Transportation/LADOT-Parking-Meter-Occupancy/e7h6-4a3e'>data.lacity.org</a>" +
     (d.data_through ? " · grid data through " + throughLabel(d.data_through) : "") +
+    " · <a href='https://github.com/citina/curb-log/blob/main/docs/METHOD.md'>how the numbers work</a>" +
     " · <a href='https://github.com/citina/curb-log'>source</a>";
 }
 
@@ -414,12 +419,13 @@ function verdict() {
   Object.keys(S.live).sort().forEach(function (c) {
     var o = S.live[c], cl = inGrid ? cellIn(lp, c, dow, k) : null;
     if (cl) { exp += cl.meanFree; liveHave += o.free; have++; minDays = Math.min(minDays, cl.days); }
-    var r = el("div", "vrow");
+    var r = el("div", "vrow"), nm = el("div", "nm");
     r.appendChild(el("span", "big", String(o.free)));
-    r.appendChild(el("span", "nm", c + " <span style='opacity:.6'>of " + o.total + "</span>"));
-    var cmp = el("span", "cmp", cl ? "usual " + fmt1(cl.meanFree) + " · " + cl.days + "d" : inGrid ? "no history" : "—");
-    if (cl) cmp.title = "averaged over " + confidence(cl.days);
-    r.appendChild(cmp);
+    nm.appendChild(el("div", null, place(c) + " <span style='opacity:.6'>of " + o.total + "</span>"));
+    if (inGrid) nm.appendChild(el("div", "cmp", cl
+      ? "usually " + fmt1(cl.meanFree) + " free (" + cl.days + (cl.days === 1 ? " day" : " days") + " of data)"
+      : "no history"));
+    r.appendChild(nm);
     rows.appendChild(r);
   });
   v.appendChild(rows);
@@ -438,10 +444,6 @@ function verdict() {
   } else if (lp) {
     notes.push("No " + lp.label + " history for this half hour yet, so there is nothing to compare against.");
   }
-  var stale = Object.keys(S.live).reduce(function (a, c) { return a + S.live[c].stale; }, 0);
-  if (stale) notes.push(stale === 1
-    ? "1 sensor hasn’t reported in over a day — treat it as unreliable."
-    : stale + " sensors haven’t reported in over a day — treat them as unreliable.");
   if (S.liveAt) notes.push("Read " + S.liveAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) + ".");
   v.appendChild(el("div", "basis", notes.join(" ")));
   return v;
@@ -462,7 +464,7 @@ function banner(html, warn) {
 function clusterCard(c) {
   var info = S.data.clusters[c];
   var card = el("div", "card");
-  card.appendChild(el("h2", null, c));
+  card.appendChild(el("h2", null, place(c)));
   card.appendChild(el("p", "hint", info.n_spaces + " sensored spaces · " + info.blockfaces.join(", ") +
     " · each cell is a half hour: the number is the average spaces free across it, colour is the share free."));
 
@@ -545,11 +547,11 @@ function predictCard() {
     var cl = cell(c, S.predDow, S.predSlot), box = el("div");
     box.style.cssText = "padding:11px 0;border-top:1px solid var(--rule)";
     if (!cl) {
-      box.innerHTML = "<strong>" + c + "</strong><br><span style='color:var(--ink-3);font-size:13px'>" +
+      box.innerHTML = "<strong>" + place(c) + "</strong><br><span style='color:var(--ink-3);font-size:13px'>" +
         "Never measured at " + DOW[S.predDow] + " " + slotLabel(S.predSlot) + " in " + pr.label + ".</span>";
     } else {
       any = true;
-      box.innerHTML = "<strong>" + c + "</strong><br>" +
+      box.innerHTML = "<strong>" + place(c) + "</strong><br>" +
         "<span style='font-family:\"IBM Plex Mono\",monospace;font-size:19px;font-weight:600'>" +
         fmt1(cl.meanFree) + "</span> <span style='font-size:13px;color:var(--ink-2)'>free on average of " +
         S.data.clusters[c].n_spaces + "</span><br>" +
@@ -587,7 +589,7 @@ function viewBasis() {
     var cb = el("input"); cb.type = "checkbox"; cb.checked = !!S.basis.clusters[c];
     cb.onchange = function () { S.basis.clusters[c] = cb.checked; saveBasis(); render(); };
     var txt = el("div");
-    txt.appendChild(el("div", "nm", c));
+    txt.appendChild(el("div", "nm", place(c)));
     txt.appendChild(el("div", "de", info.n_spaces + " spaces · " + info.blockfaces.join(", ")));
     row.appendChild(cb); row.appendChild(txt);
     m.appendChild(row);
