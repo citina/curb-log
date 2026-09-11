@@ -1,28 +1,38 @@
 #!/usr/bin/env python3
 """Build the page's data.json: exact time-weighted occupancy, in 30-minute cells.
 
-HOW "SPACES FREE" IS COMPUTED
+HOW "SPACES FREE" IS COMPUTED  (docs/METHOD.md says it in plain language)
 The LADOT archive is an event log: each row says a space became VACANT or
-OCCUPIED at an exact second. Between two events the space's state is known and
-constant, so for every cluster we sweep through its events in time order,
-keeping a running count of vacant spaces. Each stretch of constant state is
-split at 30-minute cell boundaries and credited to its cell as:
+OCCUPIED at an exact second. Between two events nothing changed, so every
+space's state is known at every second. For each cluster we sweep its events in
+time order, keeping a running count of known and vacant spaces. Each stretch of
+constant state is split at 30-minute cell boundaries and credited to its cell,
+day by day, as:
 
+    observed seconds       (duration)
     vacant space-seconds   (vacant count x duration)
-    observed seconds       (duration, whenever at least one space is known)
-    empty seconds          (duration, when the known count of vacant is zero)
+    empty seconds          (duration, when no known space is vacant)
+    known space-seconds    (known count x duration)
 
-so a cell's mean spaces free = vacant space-seconds / observed seconds, and
-"found nothing" = empty seconds / observed seconds. That is the exact average
-over the half hour, not an estimate from samples.
+so a cell's share free = vacant space-seconds / known space-seconds, its mean
+spaces free = that share x the cluster's size, and "found nothing" = empty
+seconds / observed seconds. That is the exact average over the half hour, not an
+estimate from samples. Dividing by known space-seconds rather than by time is
+what keeps a space we can't see from being counted as occupied.
 
-A space silent for more than --stale-hours drops out of the count (a dead sensor
-would otherwise keep asserting its last state forever); before its first event
-it is unknown too.
+A space silent for more than --stale-hours (72) drops out of the known count.
+Silence normally just means nothing changed — a space can sit vacant all
+weekend — but a dead or stuck sensor would otherwise assert its last state for
+weeks (C127 and C145 on 3601 Vermont did, in summer). Before its first event a
+space is unknown too. A stretch counts only while at least --min-known (80%) of
+the cluster's spaces are known.
+
+Holidays and non-teaching days (EXCLUDED below) are left out of every pattern.
 
 Our own polls are not an event log — they are snapshots — so each snapshot is
 held forward until the next one, capped at --hold minutes so a dropped run or a
-sleeping laptop becomes unobserved time rather than being papered over.
+sleeping laptop becomes unobserved time rather than being papered over. A
+lowercase state (over 24 hours old) or '?' counts as unknown.
 
 PRECEDENCE: where the archive covers a day, it is used and polls for that day are
 ignored — the archive is the complete record; polls are a stand-in until it is
@@ -44,6 +54,37 @@ PERIODS = [
     {"id": "summer-2026", "label": "Summer 2026",    "start": "2026-05-12", "end": "2026-08-23"},
 ]
 DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+# Left out of every pattern: USC holidays and non-teaching days, which aren't a
+# normal day at these curbs. Term dates are from usc.edu/academic-calendar;
+# Citina confirmed the whole list, summer holidays included, 2026-09-11.
+# Inclusive ranges; only weekdays are kept, since the grid is weekdays.
+NOT_NORMAL = [
+    ("2026-05-25", "2026-05-25", "Memorial Day"),
+    ("2026-06-19", "2026-06-19", "Juneteenth"),
+    ("2026-07-03", "2026-07-03", "Independence Day (observed)"),
+    ("2026-09-07", "2026-09-07", "Labor Day"),
+    ("2026-10-08", "2026-10-09", "Fall recess"),
+    ("2026-11-11", "2026-11-11", "Veterans Day"),
+    ("2026-11-25", "2026-11-29", "Thanksgiving"),
+    ("2026-12-05", "2026-12-08", "Study days"),
+    ("2026-12-09", "2026-12-16", "Final exams"),
+    ("2026-12-17", "2027-01-10", "Winter recess"),
+]
+
+
+def _weekdays(ranges):
+    out = {}
+    for first, last, label in ranges:
+        d = dt.date.fromisoformat(first)
+        while d <= dt.date.fromisoformat(last):
+            if d.weekday() < 5:
+                out[d.isoformat()] = label
+            d += dt.timedelta(days=1)
+    return out
+
+
+EXCLUDED = _weekdays(NOT_NORMAL)
 
 
 def cluster_of(blockface):
@@ -69,20 +110,22 @@ def parse_window(s):
 
 
 class Acc:
-    """(period, cluster, dow, slot) -> [observed_s, vacant_space_s, empty_s, {dates}]
+    """(cluster, date, slot) -> [observed_s, vacant_space_s, empty_s, known_space_s]
 
-    The window is in minutes after local midnight."""
+    Kept per date, so holidays and periods are applied when cells are summed
+    rather than baked in during the sweep. The window is in minutes after local
+    midnight; sizes is each cluster's number of spaces."""
 
-    def __init__(self, win_start, win_end, slot_min):
+    def __init__(self, win_start, win_end, slot_min, sizes, min_known):
         self.ws, self.we, self.slot = win_start, win_end, slot_min
-        self.cells = collections.defaultdict(lambda: [0.0, 0.0, 0.0, set()])
-        self.days = collections.defaultdict(set)
-        self.sources = collections.defaultdict(set)
+        self.sizes, self.min_known = sizes, min_known
+        self.cells = collections.defaultdict(lambda: [0.0, 0.0, 0.0, 0.0])
+        self.sources = collections.defaultdict(set)      # date -> {"archive", "poll"}
         self.latest_poll = None
 
     def add(self, a, b, cluster, vacant, known, source):
         """Credit a stretch [a, b) of constant state to the cells it overlaps."""
-        if known <= 0 or b <= a:
+        if b <= a or known <= 0 or known < self.min_known * self.sizes[cluster]:
             return
         t = a
         while t < b:
@@ -98,18 +141,38 @@ class Acc:
             edge = t.replace(hour=0, minute=0, second=0, microsecond=0) + \
                 dt.timedelta(minutes=self.ws + (k + 1) * self.slot)
             q = min(b, edge)
-            per = period_of(t.date())
-            if per:
+            if period_of(t.date()):
                 L = (q - t).total_seconds()
-                c = self.cells[(per, cluster, t.weekday(), k)]
+                day = t.date().isoformat()
+                c = self.cells[(cluster, day, k)]
                 c[0] += L
                 c[1] += vacant * L
                 if vacant == 0:
                     c[2] += L
-                c[3].add(t.date().isoformat())
-                self.days[per].add(t.date().isoformat())
-                self.sources[per].add(source)
+                c[3] += known * L
+                self.sources[day].add(source)
             t = q
+
+
+def summarise(cells, sources, excluded):
+    """Sum per-date cells into (period, cluster, dow, slot), leaving out excluded days.
+
+    Returns ({key: [observed_s, vacant_space_s, empty_s, known_space_s, {dates}]},
+             {period: {dates}}, {period: {sources}})."""
+    out = collections.defaultdict(lambda: [0.0, 0.0, 0.0, 0.0, set()])
+    days, srcs = collections.defaultdict(set), collections.defaultdict(set)
+    for (c, day, k), v in cells.items():
+        d = dt.date.fromisoformat(day)
+        per = period_of(d)
+        if day in excluded or not per:
+            continue
+        x = out[(per, c, d.weekday(), k)]
+        for i in range(4):
+            x[i] += v[i]
+        x[4].add(day)
+        days[per].add(day)
+        srcs[per] |= sources[day]
+    return out, days, srcs
 
 
 def load_archive(paths, cluster_spaces, acc, stale_h):
@@ -185,8 +248,8 @@ def load_polls(data_dir, cluster_spaces, acc, hold_min, skip_dates):
     for i, (t, st) in enumerate(snaps):
         b = min(snaps[i + 1][0], t + hold) if i + 1 < len(snaps) else t + hold
         for c, cc in cols.items():
-            # uppercase only: lowercase marks a state >24h old, excluded exactly
-            # as the archive sweep excludes silent sensors
+            # uppercase only: lowercase marks a state >24h old and '?' no state,
+            # both unknown, exactly as the archive sweep drops silent sensors
             v = sum(1 for j in cc if j < len(st) and st[j] == "V")
             k = sum(1 for j in cc if j < len(st) and st[j] in "VO")
             acc.add(t, b, c, v, k, "poll")
@@ -209,13 +272,14 @@ def report(payload):
     for pr in payload["periods"]:
         print(f"\n=== {pr['label']} · {pr['days']} weekdays · {'+'.join(pr['sources'])} ===")
         for c, info in payload["clusters"].items():
-            print(f"\n{c} ({info['n_spaces']} spaces) — mean spaces free, 30-min cells")
+            n = info["n_spaces"]
+            print(f"\n{c} ({n} spaces) — mean spaces free, 30-min cells")
             print("      " + "".join(f"{slot_label(ws, sl, k)[:-1]:>6}" for k in range(nslot)))
             for d in range(5):
                 row = []
                 for k in range(nslot):
                     v = pr["cells"].get(f"{c}|{d}|{k}")
-                    row.append(f"{v[1]/v[0]:6.1f}" if v and v[0] else "     ·")
+                    row.append(f"{v[1] / v[4] * n:6.1f}" if v and v[4] else "     ·")
                 print(f"{DOW[d]:<6}" + "".join(row))
             print("      days behind each cell:")
             for d in range(5):
@@ -235,7 +299,10 @@ def main():
     p.add_argument("--data-dir", default="data")
     p.add_argument("--window", default="8-16:30", help="grid window, local time, e.g. 8-16:30")
     p.add_argument("--slot", type=int, default=30, help="minutes per cell")
-    p.add_argument("--stale-hours", type=float, default=24)
+    p.add_argument("--stale-hours", type=float, default=72,
+                   help="hours of silence after which a sensor's last state stops counting")
+    p.add_argument("--min-known", type=float, default=0.8,
+                   help="share of a cluster's spaces that must be known for a stretch to count")
     p.add_argument("--hold", type=float, default=10, help="max minutes a poll snapshot is held")
     p.add_argument("--out", default="../docs/data.json")
     p.add_argument("--report", action="store_true")
@@ -248,45 +315,50 @@ def main():
     for s in ids:
         if s in meta:
             cluster_spaces[cluster_of(meta[s]["blockface"])].append(s)
+    sizes = {c: len(ss) for c, ss in cluster_spaces.items()}
 
-    acc = Acc(ws, we, a.slot)
+    acc = Acc(ws, we, a.slot, sizes, a.min_known)
     print("building:", file=sys.stderr)
     # The cache is keyed by extract file, so a run holding only some extracts
     # (CI holds none; a new month arrives alone) recomputes what it has and
     # keeps the rest instead of silently dropping it.
     cache = json.load(open(a.archive_cache)) if os.path.exists(a.archive_cache) else {}
     files = cache.get("files", {})
-    # Cached cells are cut to one window and slot ([start_min, end_min, slot_min];
-    # an unstamped cache predates the stamp and was cut to 8-16). Reusing one cut
-    # to another grid would leave the new columns silently empty, so a mismatched
-    # cache is only usable if every extract in it is here to recompute.
+    # Cached cells are cut to one window and slot ([start_min, end_min, slot_min])
+    # and swept under one method (stale cut, minimum known share). Mixing cuts
+    # would leave columns silently empty or blend two methods, so a mismatched
+    # cache is only usable if every extract in it is here to recompute. (An
+    # unstamped cache predates the stamps and was cut to 8-16.)
     grid = [ws, we, a.slot]
-    if files and cache.get("grid", [480, 960, 30]) != grid:
+    method = {"stale_hours": a.stale_hours, "min_known": a.min_known}
+    was = (cache.get("grid", [480, 960, 30]), cache.get("method"))
+    if files and was != (grid, method):
         here = {os.path.basename(p) for p in glob.glob(a.archive)}
         gone = sorted(set(files) - here)
         if gone:
-            sys.exit(f"{a.archive_cache} is cut to grid {cache.get('grid', [480, 960, 30])}, not {grid}, "
-                     f"and {', '.join(gone)} isn't here to recompute. Fetch it with fetch_history.py first.")
+            sys.exit(f"{a.archive_cache} is cut to grid {was[0]} with method {was[1]}, not {grid} with "
+                     f"{method}, and {', '.join(gone)} isn't here to recompute. "
+                     f"Fetch it with fetch_history.py first.")
         files = {}
     for path in sorted(glob.glob(a.archive)):
-        one = Acc(ws, we, a.slot)
+        one = Acc(ws, we, a.slot, sizes, a.min_known)
         dates = load_archive([path], cluster_spaces, one, a.stale_hours)
         files[os.path.basename(path)] = {
             "dates": sorted(dates),
-            "cells": {f"{per}|{c}|{d}|{k}": [round(v[0], 1), round(v[1], 1), round(v[2], 1), sorted(v[3])]
-                      for (per, c, d, k), v in one.cells.items()}}
+            "cells": {f"{c}|{k}|{day}": [round(x, 1) for x in v]
+                      for (c, day, k), v in sorted(one.cells.items())}}
     covered = set()
     for blk in files.values():
         covered.update(blk["dates"])
         for key, v in blk["cells"].items():
-            per, c, d, k = key.split("|")
-            cell = acc.cells[(per, c, int(d), int(k))]
-            cell[0] += v[0]; cell[1] += v[1]; cell[2] += v[2]
-            cell[3].update(v[3])
-            acc.days[per].update(v[3])
-            acc.sources[per].add("archive")
+            c, k, day = key.split("|")
+            cell = acc.cells[(c, day, int(k))]
+            for i in range(4):
+                cell[i] += v[i]
+            acc.sources[day].add("archive")
     if files:
-        json.dump({"grid": grid, "files": files}, open(a.archive_cache, "w"), separators=(",", ":"))
+        json.dump({"grid": grid, "method": method, "files": files}, open(a.archive_cache, "w"),
+                  separators=(",", ":"))
         print(f"  archive extracts in cache: {', '.join(sorted(files))}", file=sys.stderr)
     load_polls(a.data_dir, cluster_spaces, acc, a.hold, covered)
 
@@ -295,15 +367,16 @@ def main():
         return [sum(float(q["latitude"]) for q in ps) / len(ps),
                 sum(float(q["longitude"]) for q in ps) / len(ps)] if ps else None
 
+    agg, days, srcs = summarise(acc.cells, acc.sources, EXCLUDED)
     periods = []
     for spec in PERIODS:
         pid = spec["id"]
-        cells = {f"{c}|{d}|{k}": [round(v[0]), round(v[1]), round(v[2]), len(v[3])]
-                 for (per, c, d, k), v in acc.cells.items() if per == pid and v[0] > 0}
+        cells = {f"{c}|{d}|{k}": [round(v[0]), round(v[1]), round(v[2]), len(v[4]), round(v[3])]
+                 for (per, c, d, k), v in sorted(agg.items()) if per == pid and v[0] > 0}
         if not cells:
             continue
         periods.append({"id": pid, "label": spec["label"], "start": spec["start"], "end": spec["end"],
-                        "sources": sorted(acc.sources[pid]), "days": len(acc.days[pid]),
+                        "sources": sorted(srcs[pid]), "days": len(days[pid]),
                         "cells": cells})
 
     through = acc.latest_poll or (dt.datetime.fromisoformat(max(covered)) if covered else None)
@@ -315,7 +388,12 @@ def main():
         "window_start": ws // 60 if ws % 60 == 0 else ws / 60,
         "window_end": we // 60 if we % 60 == 0 else we / 60,
         "slot_min": a.slot,
-        "cell_format": ["observed_seconds", "vacant_space_seconds", "empty_seconds", "days"],
+        # known_space_seconds comes last so a page cached from before it was
+        # added still finds the first four fields where it expects them
+        "cell_format": ["observed_seconds", "vacant_space_seconds", "empty_seconds", "days",
+                        "known_space_seconds"],
+        "stale_hours": a.stale_hours, "min_known": a.min_known,
+        "excluded_days": EXCLUDED,
         "term_start": "2026-08-24", "sensors_live": "2026-05-12",
         "clusters": {c: {"n_spaces": len(ss), "spaces": ss, "centroid": centroid(c),
                          "blockfaces": sorted({meta[s]["blockface"] for s in ss})}

@@ -217,16 +217,20 @@ function livePeriod() {
   return ps[0] || null;
 }
 
-/* ---------- cells ---------- */
 /* ---------- cells ----------
-   A cell is [observed_seconds, vacant_space_seconds, empty_seconds, days].
-   Mean free = vacant space-seconds / observed seconds: the exact average number
-   of free spaces across that half hour, integrated from the event log.
-   None-free share = seconds with zero free / observed seconds. */
+   A cell is [observed_seconds, vacant_space_seconds, empty_seconds, days,
+   known_space_seconds] (data.json's cell_format). Share free = vacant
+   space-seconds / known space-seconds: of the sensor-time we can see, the exact
+   share that was vacant. Mean free = that share x the cluster's spaces, so a
+   space we can't see is left out rather than counted as occupied.
+   None-free share = seconds with no known space free / observed seconds.
+   docs/METHOD.md explains it in full. A four-field cell predates
+   known_space_seconds and is read the old way. */
 function cellIn(period, cluster, dow, slot) {
   var v = period && period.cells[cluster + "|" + dow + "|" + slot];
   if (!v || !v[0]) return null;
-  return { meanFree: v[1] / v[0], zeroShare: v[2] / v[0], days: v[3] };
+  var free = v.length > 4 ? v[1] / v[4] * S.data.clusters[cluster].n_spaces : v[1] / v[0];
+  return { meanFree: free, zeroShare: v[2] / v[0], days: v[3] };
 }
 function cell(cluster, dow, slot) { return cellIn(curPeriod(), cluster, dow, slot); }
 function nSlots() { return Math.round((S.data.window_end - S.data.window_start) * 60 / S.data.slot_min); }
