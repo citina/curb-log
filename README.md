@@ -15,8 +15,9 @@ Vermont 37xx sits south of 37th Place and was rejected as too far to walk, as
 were the other ten metered streets in the area. Beyond this stretch the
 fallback is free (unmetered) street parking, which has no sensors — so "how
 often is this stretch empty" matters as much as "how many spaces are free".
-`map_spaces.py` redraws the coverage map; block-face numbers are unreadable as
-geography and caused a scoping mistake before the map existed.
+`map_spaces.py --bare` redraws the Basis tab's street map (the page draws the
+spaces on it from `docs/map.json`, so ticking a location changes them);
+block-face numbers are unreadable as geography and caused a scoping mistake before the map existed.
 
 ## Data sources (data.lacity.org)
 
@@ -39,7 +40,7 @@ term-time history exists. That is why `poll_live.py` exists.
 ./find_spaces.py --near 34.0206,-118.2890 --radius 800     # which spaces, and which are sensored
 ./fetch_history.py --ids sensored_ids.txt --months 2026-08 # stream a monthly archive, keep only ours
 ./build_data.py --report                                   # the page's data; grids in the terminal
-./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx" # coverage map
+./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx" --bare --out ../docs/basemap.png --json ../docs/map.json
 ./poll_live.py --ids sensored_ids.txt --collector laptop   # one snapshot
 ./install_poller.sh                                        # laptop poller (5 min) + publisher (30 min)
 ./publish.py                                               # what the publisher runs

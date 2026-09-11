@@ -11,8 +11,18 @@ Highlighted clusters are drawn solid; everything else currently tracked is drawn
 muted, so the difference between "what you asked for" and "what is running" is
 visible at a glance.
 
+For the page's Basis map, draw the background alone and let the page draw the
+spaces, so ticking a location can change them:
+
+  ./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx" --bare \
+                  --out ../docs/basemap.png --json ../docs/map.json
+
+map.json holds the image size, metres per pixel (for the walking scale), and the
+pixel position of the office and of every space inside the frame.
+
 Tiles come from OpenStreetMap under their usage policy: a handful of tiles, a
-descriptive User-Agent, cached on disk so re-runs do not refetch.
+descriptive User-Agent, cached on disk so re-runs do not refetch. Anything that
+shows them must credit "© OpenStreetMap contributors".
 """
 import argparse, io, json, math, os, re, sys, urllib.request
 
@@ -71,6 +81,9 @@ def main():
     p.add_argument("--zoom", type=int, default=17)
     p.add_argument("--pad", type=float, default=0.0016, help="degrees of margin")
     p.add_argument("--out", default="coverage.png")
+    p.add_argument("--bare", action="store_true",
+                   help="background only: no spaces, labels or legend (the page draws them)")
+    p.add_argument("--json", help="also write the frame and each space's pixel position here")
     a = p.parse_args()
 
     meta = json.load(open(a.spaces))
@@ -111,6 +124,35 @@ def main():
 
     # Fade the basemap so the markers carry the eye
     img = Image.blend(img, Image.new("RGB", img.size, "white"), 0.32)
+
+    if a.json:
+        W, H = img.size
+
+        def rel(lat, lon):
+            x, y = px(lat, lon)
+            return [round(x - ox, 1), round(y - oy, 1)]
+
+        inside = {}
+        for sid, m in sorted(meta.items()):
+            ll = m.get("latlng")
+            if ll:
+                xy = rel(float(ll["latitude"]), float(ll["longitude"]))
+                if 0 <= xy[0] <= W and 0 <= xy[1] <= H:
+                    inside[sid] = xy
+        json.dump({
+            "image": os.path.basename(a.out), "size": [W, H],
+            # ground distance per image pixel at this zoom and latitude (Web Mercator)
+            "m_per_px": round(156543.03392 * math.cos(math.radians((n + s) / 2)) / 2 ** a.zoom, 4),
+            "office": rel(olat, olon),
+            "spaces": inside,
+        }, open(a.json, "w"), separators=(",", ":"))
+        print(f"{a.json}  {len(inside)} spaces inside the frame")
+
+    if a.bare:
+        img.save(a.out)
+        print(f"{a.out}  {img.size[0]}x{img.size[1]} (background only)")
+        return
+
     d = ImageDraw.Draw(img, "RGBA")
 
     def draw_pt(lat, lon, fill, r, ring="white", rw=2):

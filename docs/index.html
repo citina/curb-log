@@ -16,6 +16,7 @@
     --accent:#2a78d6; --accent-ink:#1c5cab; --accent-wash:#e8f1fd;
     --panel:#1a1a19; --panel-ink:#fcfcfb; --panel-ink-2:#b6b5ab;
     --good:#0ca30c; --warn:#b8791a; --critical:#d03b3b;
+    --s1:#2a78d6; --s2:#eb6834;            /* the two stretches: categorical slots 1 and 2 */
     --heat-0:#0d366b; --heat-0-ink:#fff;
     --heat-1:#1c5cab; --heat-1-ink:#fff;
     --heat-2:#2a78d6; --heat-2-ink:#fff;
@@ -32,6 +33,7 @@
       --accent:#3987e5; --accent-ink:#86b6ef; --accent-wash:#16243a;
       --panel:#262625; --panel-ink:#fff; --panel-ink-2:#a9a89e;
       --good:#0ca30c; --warn:#d9a441; --critical:#e66767;
+      --s1:#3987e5; --s2:#d95926;
       --heat-0:#cde2fb; --heat-0-ink:#0b0b0b;
       --heat-1:#9ec5f4; --heat-1-ink:#0b0b0b;
       --heat-2:#6da7ec; --heat-2-ink:#0b0b0b;
@@ -116,9 +118,31 @@
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .blockrow{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--rule)}
   .blockrow:last-child{border-bottom:0}
-  .blockrow input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent);flex:none}
+  .blockrow input{margin-top:3px;width:18px;height:18px;accent-color:var(--c,var(--accent));flex:none}
   .blockrow .nm{font-weight:600;font-size:14px}
   .blockrow .de{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-2);margin-top:2px}
+  .blockrow{cursor:pointer}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:-1px;
+          background:var(--c);border:2px solid var(--c)}
+  .swatch.off{background:transparent;opacity:.65}
+  .swatch.other{--c:#8a8880;width:8px;height:8px;border-width:0;margin-left:2px;vertical-align:0}
+  .key{display:flex;flex-wrap:wrap;gap:6px 16px;padding-top:11px;font-size:12.5px;color:var(--ink-2)}
+  .key .count{flex-basis:100%;font-weight:600;color:var(--ink)}
+  .key .kx{color:var(--critical);font-weight:700;margin-right:6px}
+  /* the map stays light in both themes, so everything drawn on it uses fixed light inks */
+  .map{position:relative;margin-bottom:6px;border:1px solid var(--rule);border-radius:9px;overflow:hidden;background:#f6f4f0}
+  .map img{display:block;width:100%;height:auto}
+  .map svg{position:absolute;inset:0;width:100%;height:100%}
+  .map .tag{position:absolute;transform:translateY(-50%);font-size:12px;font-weight:700;color:#a01e1e;
+            text-shadow:0 0 2px #fff,0 0 4px #fff,0 0 6px #fff;pointer-events:none}
+  .map .scale{position:absolute;left:10px;bottom:8px;pointer-events:none}
+  .map .scale .bar{position:relative;height:6px;border:2px solid #14140f;border-top:0}
+  .map .scale .bar::after{content:"";position:absolute;left:50%;bottom:0;height:4px;border-left:2px solid #14140f}
+  .map .scale span{display:block;margin-top:2px;font-size:11px;font-weight:600;color:#14140f;white-space:nowrap;
+                   text-shadow:0 0 2px #fff,0 0 4px #fff,0 0 6px #fff}
+  .map .credit{position:absolute;right:0;bottom:0;padding:1px 6px;font-size:10.5px;color:#56554f;
+               background:rgba(255,255,255,.85);border-top-left-radius:6px}
+  .map .credit a{color:inherit}
   .btn{appearance:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;min-height:44px;
        padding:0 16px;border-radius:10px;background:var(--accent);color:#fff;border:1px solid var(--accent)}
   .btn.secondary{background:var(--surface);color:var(--ink);border-color:var(--edge);font-weight:500}
@@ -168,6 +192,7 @@ var S = {
   view: "pattern",
   period: null,      // which period's grid is on screen
   data: null,        // data.json, published by CI
+  map: null,         // map.json: the Basis map's size and each space's position on it
   live: null,        // {cluster: {free, occ, unknown, total, newest}}
   liveErr: null,
   liveAt: null,
@@ -198,6 +223,10 @@ function fmt1(n) { return (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, "
    these are the names the page shows */
 var PLACE = { "VERMONT AVE 36xx": "Vermont Ave, 36th to 37th St", "36TH ST 11xx": "36th St, west of Vermont" };
 function place(c) { return PLACE[c] || c; }
+/* colour follows the place, never its order: Vermont is series 1, 36th St series 2 */
+var SLOT = { "VERMONT AVE 36xx": 1, "36TH ST 11xx": 2 };
+var MAP_INK = { 1: "#2a78d6", 2: "#eb6834" };
+var WALK_M_PER_MIN = 80;   // a steady walk, for the map's scale
 
 /* LA local time, wherever the phone happens to be */
 function laNow() {
@@ -565,6 +594,78 @@ function predictCard() {
   return card;
 }
 
+/* The Basis map: an OpenStreetMap background drawn by tools/map_spaces.py --bare,
+   with the spaces drawn here so ticking a location changes them. map.json places
+   every space in the background image's pixels. Dots use the light series steps
+   because the map stays light in both themes; the label, scale and credit are
+   HTML so they stay readable when the map shrinks on a phone. */
+function basisMap() {
+  var M = S.map, W = M.size[0], H = M.size[1], NS = "http://www.w3.org/2000/svg";
+  var box = el("div", "map");
+  /* one image for the page's life: every tick re-renders the tab, and a fresh
+     <img> would flash blank while it decodes */
+  var img = S.mapImg;
+  if (!img) {
+    img = S.mapImg = el("img");
+    img.src = M.image; img.width = W; img.height = H;
+    img.alt = "Street map of the metered spaces studied near USC";
+  }
+  box.appendChild(img);
+
+  var svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  svg.setAttribute("aria-hidden", "true");
+  function add(tag, attrs) {
+    var n = document.createElementNS(NS, tag);
+    Object.keys(attrs).forEach(function (k) { n.setAttribute(k, attrs[k]); });
+    svg.appendChild(n);
+    return n;
+  }
+  function dot(id, attrs, label) {
+    var p = M.spaces[id];
+    if (!p) return;
+    attrs.cx = p[0]; attrs.cy = p[1];
+    var t = document.createElementNS(NS, "title");
+    t.textContent = label + " · " + id;
+    add("circle", attrs).appendChild(t);
+  }
+  var studied = {};
+  Object.keys(S.data.clusters).forEach(function (c) {
+    S.data.clusters[c].spaces.forEach(function (id) { studied[id] = true; });
+  });
+  Object.keys(M.spaces).forEach(function (id) {
+    if (!studied[id]) dot(id, { r: 3, fill: "#8a8880", "fill-opacity": 0.8, stroke: "#fff", "stroke-width": 1 },
+                          "Other metered space, not studied");
+  });
+  /* dropped stretches first, so kept spaces sit on top where they meet */
+  [false, true].forEach(function (on) {
+    Object.keys(S.data.clusters).forEach(function (c) {
+      if (!!S.basis.clusters[c] !== on) return;
+      var ink = MAP_INK[SLOT[c]] || MAP_INK[1];
+      S.data.clusters[c].spaces.forEach(function (id) {
+        dot(id, on ? { r: 6.5, fill: ink, stroke: "#fff", "stroke-width": 2 }
+                   : { r: 5.5, fill: "#fff", "fill-opacity": 0.7, stroke: ink, "stroke-opacity": 0.7, "stroke-width": 2 },
+            place(c) + (on ? "" : ", proposed to drop"));
+      });
+    });
+  });
+  var o = M.office, x = "M" + (o[0] - 8) + " " + (o[1] - 8) + "l16 16m0 -16l-16 16";
+  add("path", { d: x, stroke: "#fff", "stroke-width": 7, "stroke-linecap": "round", fill: "none" });
+  add("path", { d: x, stroke: "#d03b3b", "stroke-width": 4, "stroke-linecap": "round", fill: "none" });
+  box.appendChild(svg);
+
+  var tag = el("span", "tag", "Office");
+  tag.style.left = (o[0] + 13) / W * 100 + "%";
+  tag.style.top = o[1] / H * 100 + "%";
+  box.appendChild(tag);
+  var sc = el("div", "scale", "<div class='bar'></div><span>2 min walk</span>");
+  sc.style.width = (2 * WALK_M_PER_MIN / M.m_per_px) / W * 100 + "%";
+  box.appendChild(sc);
+  box.appendChild(el("div", "credit",
+    "© <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"));
+  return box;
+}
+
 /* ---------------- Part 1: the basis ---------------- */
 function viewBasis() {
   var f = document.createDocumentFragment();
@@ -577,23 +678,33 @@ function viewBasis() {
 
   var m = el("div", "card");
   m.appendChild(el("h2", null, "Where"));
-  m.appendChild(el("p", "hint", "The stretch being measured. Untick a block to propose dropping it."));
-  var img = el("img");
-  img.src = "coverage.png";
-  img.alt = "Map of the tracked metered spaces near USC";
-  img.style.cssText = "border-radius:9px;border:1px solid var(--rule);margin-bottom:12px";
-  m.appendChild(img);
+  m.appendChild(el("p", "hint", "The stretches being measured. Untick one to propose dropping it; its spaces fade on the map."));
+  if (S.map) m.appendChild(basisMap());
+  /* the tick list is the map's legend: each row's dot is its spaces' colour */
+  var kept = 0, total = 0;
   Object.keys(d.clusters).sort().forEach(function (c) {
-    var info = d.clusters[c];
-    var row = el("div", "blockrow");
-    var cb = el("input"); cb.type = "checkbox"; cb.checked = !!S.basis.clusters[c];
+    var info = d.clusters[c], on = !!S.basis.clusters[c];
+    total += info.n_spaces;
+    if (on) kept += info.n_spaces;
+    var row = el("label", "blockrow");
+    row.style.setProperty("--c", "var(--s" + (SLOT[c] || 1) + ")");
+    var cb = el("input"); cb.type = "checkbox"; cb.checked = on;
     cb.onchange = function () { S.basis.clusters[c] = cb.checked; saveBasis(); render(); };
     var txt = el("div");
-    txt.appendChild(el("div", "nm", place(c)));
-    txt.appendChild(el("div", "de", info.n_spaces + " spaces · " + info.blockfaces.join(", ")));
+    txt.appendChild(el("div", "nm", "<span class='swatch" + (on ? "" : " off") + "'></span>" + place(c)));
+    txt.appendChild(el("div", "de", info.n_spaces + " spaces" + (on ? "" : ", proposed to drop") +
+                                    " · " + info.blockfaces.join(", ")));
     row.appendChild(cb); row.appendChild(txt);
     m.appendChild(row);
   });
+  var key = el("div", "key");
+  key.appendChild(el("span", "count", kept === total ? total + " spaces measured"
+                                                     : kept + " of " + total + " spaces would stay"));
+  if (S.map) {
+    key.appendChild(el("span", null, "<span class='swatch other'></span>Other metered spaces, not studied"));
+    key.appendChild(el("span", null, "<span class='kx'>×</span>Office"));
+  }
+  m.appendChild(key);
   f.appendChild(m);
 
   var w = el("div", "card");
@@ -677,6 +788,11 @@ document.querySelectorAll(".nav button").forEach(function (b) {
   b.onclick = function () { S.view = b.dataset.view; render(); };
 });
 
+/* the Basis map's positions; without them the page still works, just with no map */
+var mapLoad = fetch("map.json", { cache: "no-store" })
+  .then(function (r) { return r.ok ? r.json() : null; })
+  .catch(function () { return null; });
+
 fetch("data.json", { cache: "no-store" })
   .then(function (r) { return r.json(); })
   .then(function (j) {
@@ -686,6 +802,10 @@ fetch("data.json", { cache: "no-store" })
     Object.keys(j.clusters).forEach(function (c) {
       if (!(c in S.basis.clusters)) S.basis.clusters[c] = true;
     });
+    return mapLoad;
+  })
+  .then(function (mj) {
+    S.map = mj;
     render();
     return fetchLive();
   })
