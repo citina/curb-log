@@ -34,6 +34,9 @@ jobs:
       # :30 runs rebuild the page data.
       - name: Rebuild page data
         working-directory: tools
+        # a failed build (say, a places change whose cache is still being
+        # refetched) must never cost the snapshot, which is committed next
+        continue-on-error: true
         run: |
           if [ "$(cat publisher.txt)" != ci ]; then echo "publisher is $(cat publisher.txt)"; exit 0; fi
           m=$(TZ=America/Los_Angeles date +%M)

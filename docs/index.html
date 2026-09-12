@@ -16,7 +16,7 @@
     --accent:#2a78d6; --accent-ink:#1c5cab; --accent-wash:#e8f1fd;
     --panel:#1a1a19; --panel-ink:#fcfcfb; --panel-ink-2:#b6b5ab;
     --good:#0ca30c; --warn:#b8791a; --critical:#d03b3b;
-    --s1:#2a78d6; --s2:#eb6834;            /* the two stretches: categorical slots 1 and 2 */
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;   /* the places: categorical slots 1-3 */
     --heat-0:#0d366b; --heat-0-ink:#fff;
     --heat-1:#1c5cab; --heat-1-ink:#fff;
     --heat-2:#2a78d6; --heat-2-ink:#fff;
@@ -33,7 +33,7 @@
       --accent:#3987e5; --accent-ink:#86b6ef; --accent-wash:#16243a;
       --panel:#262625; --panel-ink:#fff; --panel-ink-2:#a9a89e;
       --good:#0ca30c; --warn:#d9a441; --critical:#e66767;
-      --s1:#3987e5; --s2:#d95926;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70;
       --heat-0:#cde2fb; --heat-0-ink:#0b0b0b;
       --heat-1:#9ec5f4; --heat-1-ink:#0b0b0b;
       --heat-2:#6da7ec; --heat-2-ink:#0b0b0b;
@@ -116,12 +116,20 @@
   input[type=time],input[type=date]{width:100%;font-family:inherit;font-size:15px;background:var(--surface);
     color:var(--ink);border:1px solid var(--edge);border-radius:9px;padding:9px 11px;min-height:42px}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .blockrow{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--rule)}
-  .blockrow:last-child{border-bottom:0}
-  .blockrow input{margin-top:3px;width:18px;height:18px;accent-color:var(--c,var(--accent));flex:none}
-  .blockrow .nm{font-weight:600;font-size:14px}
-  .blockrow .de{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-2);margin-top:2px}
-  .blockrow{cursor:pointer}
+  .placerow{display:flex;align-items:flex-start;gap:10px;padding:9px 10px;margin-top:8px;cursor:pointer;
+            border:1px solid var(--rule);border-radius:10px}
+  .placerow.on{border-color:var(--c);box-shadow:inset 3px 0 0 var(--c)}
+  .placerow input[type=radio]{margin-top:9px;width:18px;height:18px;accent-color:var(--c);flex:none}
+  .placerow .grow{flex:1;min-width:0}
+  .placerow .pname{width:100%;font:inherit;font-weight:600;font-size:14px;color:var(--ink);background:transparent;
+                   border:1px solid transparent;border-radius:6px;padding:4px 6px;margin-left:-6px}
+  .placerow .pname:hover,.placerow .pname:focus{border-color:var(--edge);background:var(--surface)}
+  .placerow .de{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-2);margin-top:1px}
+  .placerow .x{appearance:none;flex:none;border:0;background:transparent;color:var(--ink-3);cursor:pointer;
+               font-size:20px;line-height:1;min-width:36px;min-height:36px;border-radius:8px}
+  .placerow .x:hover{background:var(--well);color:var(--ink)}
+  .addrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:12.5px;color:var(--ink-3)}
+  .maptools{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;margin-bottom:8px}
   .swatch{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:7px;vertical-align:-1px;
           background:var(--c);border:2px solid var(--c)}
   .swatch.off{background:transparent;opacity:.65}
@@ -130,25 +138,31 @@
   .key .count{flex-basis:100%;font-weight:600;color:var(--ink)}
   .key .kx{color:var(--critical);font-weight:700;margin-right:6px}
   /* the map stays light in both themes, so everything drawn on it uses fixed light inks */
-  .map{position:relative;margin-bottom:6px;border:1px solid var(--rule);border-radius:9px;overflow:hidden;background:#f6f4f0}
-  .map img{display:block;width:100%;height:auto}
+  .mapwrap{position:relative;margin-bottom:6px;border:1px solid var(--rule);border-radius:9px;overflow:hidden;background:#f6f4f0}
+  .mapscroll.zoom{overflow:auto;max-height:min(68vh,640px);overscroll-behavior:contain}
+  .map{position:relative}
+  .map img{display:block;width:100%;max-width:none;height:auto}
   .map svg{position:absolute;inset:0;width:100%;height:100%}
+  .map svg circle{cursor:pointer}
+  .map svg.boxing{cursor:crosshair;touch-action:none}
+  .map svg.boxing circle{pointer-events:none}
   .map .tag{position:absolute;transform:translateY(-50%);font-size:12px;font-weight:700;color:#a01e1e;
             text-shadow:0 0 2px #fff,0 0 4px #fff,0 0 6px #fff;pointer-events:none}
-  .map .scale{position:absolute;left:10px;bottom:8px;pointer-events:none}
-  .map .scale .bar{position:relative;height:6px;border:2px solid #14140f;border-top:0}
-  .map .scale .bar::after{content:"";position:absolute;left:50%;bottom:0;height:4px;border-left:2px solid #14140f}
-  .map .scale span{display:block;margin-top:2px;font-size:11px;font-weight:600;color:#14140f;white-space:nowrap;
+  .mapwrap .scale{position:absolute;left:10px;bottom:8px;pointer-events:none}
+  .mapwrap .scale .bar{position:relative;height:6px;border:2px solid #14140f;border-top:0}
+  .mapwrap .scale .bar::after{content:"";position:absolute;left:50%;bottom:0;height:4px;border-left:2px solid #14140f}
+  .mapwrap .scale span{display:block;margin-top:2px;font-size:11px;font-weight:600;color:#14140f;white-space:nowrap;
                    text-shadow:0 0 2px #fff,0 0 4px #fff,0 0 6px #fff}
-  .map .credit{position:absolute;right:0;bottom:0;padding:1px 6px;font-size:10.5px;color:#56554f;
+  .mapwrap .credit{position:absolute;right:0;bottom:0;padding:1px 6px;font-size:10.5px;color:#56554f;
                background:rgba(255,255,255,.85);border-top-left-radius:6px}
-  .map .credit a{color:inherit}
+  .mapwrap .credit a{color:inherit}
   .btn{appearance:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;min-height:44px;
        padding:0 16px;border-radius:10px;background:var(--accent);color:#fff;border:1px solid var(--accent)}
   .btn.secondary{background:var(--surface);color:var(--ink);border-color:var(--edge);font-weight:500}
+  .btn:disabled{opacity:.5;cursor:default}
   .btn:focus-visible,.chip:focus-visible,input:focus-visible,.nav button:focus-visible{
        outline:2px solid var(--accent);outline-offset:2px}
-  pre.cfg{background:var(--well);border-radius:9px;padding:12px;overflow-x:auto;
+  pre.cfg{background:var(--well);border-radius:9px;padding:12px;overflow-x:auto;white-space:pre-wrap;
           font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.55;margin:12px 0 0}
   .banner{display:flex;gap:10px;align-items:flex-start;background:var(--accent-wash);
           border:1px solid color-mix(in srgb,var(--accent) 28%,transparent);border-radius:10px;
@@ -186,7 +200,7 @@
 
 var DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 var LIVE = "https://data.lacity.org/resource/e7h6-4a3e.json";
-var LS = "curblog.basis.v2";
+var LS = "curblog.basis.v3";
 
 var S = {
   view: "pattern",
@@ -197,6 +211,10 @@ var S = {
   liveErr: null,
   liveAt: null,
   basis: null,       // the user's edited basis (local until applied)
+  mapZoom: true,     // Basis map: close up (full-size image, scrolls) or the whole area
+  mapTool: "tap",    // Basis map: "tap" a space or drag a "box" around several
+  mapScroll: null,   // the close-up's scroll position, kept across re-renders
+  afterRender: [],   // work that needs the view in the page (restoring that scroll)
   predDow: null,
   predSlot: null
 };
@@ -219,13 +237,15 @@ function throughLabel(iso) {           // "2026-09-10T10:29", already LA local
     (h % 12 === 0 ? 12 : h % 12) + ":" + (mm < 10 ? "0" : "") + mm + (h < 12 ? "a" : "p");
 }
 function fmt1(n) { return (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, ""); }
-/* data.json keys the clusters by LADOT's block-face shorthand ("VERMONT AVE 36xx");
-   these are the names the page shows */
-var PLACE = { "VERMONT AVE 36xx": "Vermont Ave, 36th to 37th St", "36TH ST 11xx": "36th St, west of Vermont" };
-function place(c) { return PLACE[c] || c; }
-/* colour follows the place, never its order: Vermont is series 1, 36th St series 2 */
-var SLOT = { "VERMONT AVE 36xx": 1, "36TH ST 11xx": 2 };
-var MAP_INK = { 1: "#2a78d6", 2: "#eb6834" };
+/* data.json keys each place by its id in tools/places.json ("vermont") and
+   carries the name the page shows */
+function place(c) { var i = S.data && S.data.clusters[c]; return (i && i.name) || c; }
+/* colour follows the place, never its order: places.json gives each a slot */
+function slotOf(c) { var i = S.data && S.data.clusters[c]; return (i && i.slot) || 1; }
+var MAP_INK = { 1: "#2a78d6", 2: "#eb6834", 3: "#1baf7a" };
+/* Map dots are read all against all, and only the palette's first three
+   categorical slots stay distinguishable that way, colour-blind vision included. */
+var MAX_PLACES = 3;
 var WALK_M_PER_MIN = 80;   // a steady walk, for the map's scale
 
 /* LA local time, wherever the phone happens to be */
@@ -329,29 +349,114 @@ function fetchLive() {
     .catch(function (e) { S.liveErr = e.message || String(e); });
 }
 
-/* ---------- basis ---------- */
+/* ---------- basis ----------
+   Every sensored space nearby is collected; the places are which of them the
+   grid is built from. data.json says what's running; S.basis is the user's
+   proposed edit, kept in this browser until it's applied. */
+function runningPlaces() {
+  return Object.keys(S.data.clusters).sort().map(function (c) {
+    var info = S.data.clusters[c];
+    return { id: c, name: place(c), slot: slotOf(c), spaces: info.spaces.slice() };
+  });
+}
+function idKey(s) { var m = /^C(\d+)(.*)$/.exec(s); return m ? [+m[1], m[2]] : [Infinity, s]; }
+function sortIds(ids) {
+  return ids.slice().sort(function (a, b) {
+    var x = idKey(a), y = idKey(b);
+    return (x[0] - y[0]) || (x[1] < y[1] ? -1 : x[1] > y[1] ? 1 : 0);
+  });
+}
+/* what the grid would be built from; an empty place is left out */
+function placesKey(ps) {
+  return JSON.stringify(ps.filter(function (p) { return p.spaces.length; })
+    .map(function (p) { return [p.id, p.name, sortIds(p.spaces)]; })
+    .sort(function (a, b) { return a[0] < b[0] ? -1 : 1; }));
+}
 function defaultBasis() {
-  var cs = {};
-  Object.keys(S.data.clusters).forEach(function (c) { cs[c] = true; });
+  var ps = runningPlaces(), first = ps.filter(function (p) { return p.slot === 1; })[0] || ps[0];
   /* collection and the grid share one window, so what's running is what data.json says */
-  return { clusters: cs, timeStart: hhmm(S.data.window_start), timeEnd: hhmm(S.data.window_end),
+  return { base: placesKey(ps), places: ps, active: first ? first.id : null,
+           timeStart: hhmm(S.data.window_start), timeEnd: hhmm(S.data.window_end),
            weekdaysOnly: true, until: "" };
 }
+/* an edit saved against places that have since changed was applied or overtaken */
 function loadBasis() {
-  try { var v = JSON.parse(localStorage.getItem(LS)); if (v && v.clusters && v.timeStart) return v; } catch (e) {}
+  try {
+    var v = JSON.parse(localStorage.getItem(LS));
+    if (v && v.places && v.timeStart && v.base === placesKey(runningPlaces())) return v;
+  } catch (e) {}
   return null;
 }
 function saveBasis() { try { localStorage.setItem(LS, JSON.stringify(S.basis)); } catch (e) {} }
 
-/* The page cannot reach the collectors, so an edit here is a request, not an
+/* The page cannot change what's measured, so an edit here is a request, not an
    act. Dirty state is shown plainly rather than pretending it took effect. */
 function basisDirty() {
   var d = defaultBasis();
   if (S.basis.timeStart !== d.timeStart || S.basis.timeEnd !== d.timeEnd) return true;
   if (S.basis.weekdaysOnly !== d.weekdaysOnly) return true;
   if (S.basis.until) return true;
-  return Object.keys(d.clusters).some(function (c) { return !S.basis.clusters[c]; });
+  return placesKey(S.basis.places) !== d.base;
 }
+function activePlace() {
+  var ps = S.basis.places;
+  for (var i = 0; i < ps.length; i++) if (ps[i].id === S.basis.active) return ps[i];
+  return ps[0] || null;
+}
+/* Spaces join the place being edited, leaving any other place; if every one of
+   them is in it already, they leave it instead. */
+function pickSpaces(ids) {
+  var a = activePlace();
+  if (!a || !ids.length) return;
+  var mine = {}, set = {};
+  a.spaces.forEach(function (s) { mine[s] = true; });
+  ids.forEach(function (s) { set[s] = true; });
+  var all = ids.every(function (s) { return mine[s]; });
+  S.basis.places.forEach(function (p) {
+    if (p !== a || all) p.spaces = p.spaces.filter(function (s) { return !set[s]; });
+  });
+  if (!all) a.spaces = sortIds(a.spaces.concat(ids.filter(function (s) { return !mine[s]; })));
+  saveBasis(); render();
+}
+function addPlace() {
+  var used = {}, n = 1;
+  S.basis.places.forEach(function (p) { used[p.slot] = true; });
+  var slot = [1, 2, 3].filter(function (k) { return !used[k]; })[0];
+  if (!slot || S.basis.places.length >= MAX_PLACES) return;
+  while (S.basis.places.some(function (p) { return p.id === "new-" + n; })) n++;
+  S.basis.places.push({ id: "new-" + n, name: "New place", slot: slot, spaces: [] });
+  S.basis.active = "new-" + n;
+  saveBasis(); render();
+}
+function removePlace(p) {
+  S.basis.places = S.basis.places.filter(function (q) { return q !== p; });
+  if (S.basis.active === p.id) S.basis.active = (S.basis.places[0] || {}).id;
+  saveBasis(); render();
+}
+/* the block to paste back: places in tools/places.json's own layout, so applying
+   it is a copy; a new place gets an id made from its name */
+function cfgText() {
+  var taken = {};
+  S.basis.places.forEach(function (p) { if (!/^new-/.test(p.id)) taken[p.id] = true; });
+  var ps = S.basis.places.filter(function (p) { return p.spaces.length; })
+    .sort(function (a, b) { return a.slot - b.slot; })
+    .map(function (p) {
+      var id = p.id;
+      if (/^new-/.test(id)) {
+        var stem = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "place", k = 2;
+        id = stem;
+        while (taken[id]) id = stem + "-" + k++;
+        taken[id] = true;
+      }
+      return '    {"id": ' + JSON.stringify(id) + ', "name": ' + JSON.stringify(p.name) + ', "slot": ' + p.slot +
+             ',\n     "spaces": ' + JSON.stringify(sortIds(p.spaces)).replace(/","/g, '", "') + "}";
+    });
+  return '{\n  "places": [\n' + ps.join(",\n") + "\n  ],\n" +
+         '  "hours": ["' + S.basis.timeStart + '", "' + S.basis.timeEnd + '"],\n' +
+         '  "weekdaysOnly": ' + S.basis.weekdaysOnly + ",\n" +
+         '  "until": ' + JSON.stringify(S.basis.until || null) + "\n}";
+}
+function titleCase(s) { return s.toLowerCase().replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); }); }
 
 /* ================= render ================= */
 function render() {
@@ -361,7 +466,9 @@ function render() {
   var host = document.getElementById("view");
   host.innerHTML = "";
   if (!S.data) { host.appendChild(el("div", "card", "<p class='hint'>Loading collected data…</p>")); return; }
+  S.afterRender = [];
   host.appendChild(S.view === "basis" ? viewBasis() : viewPattern());
+  S.afterRender.forEach(function (fn) { fn(); });
 
   var d = S.data, pr = curPeriod();
   document.getElementById("sub").textContent = pr
@@ -407,7 +514,7 @@ function viewPattern() {
 
   if (pr.end) {
     f.appendChild(banner("<strong>" + pr.label + " does not predict term time.</strong> " +
-      "Measured on these exact spaces, midday vacancy ran about 49% in summer and 6% once classes " +
+      "Measured on these blocks, midday vacancy ran about 49% in summer and 6% once classes " +
       "resumed. Read this grid as a contrast, never as a forecast.", true));
   } else if (pr.days < 5) {
     f.appendChild(banner("<strong>Too early to read the pattern.</strong> " + pr.days +
@@ -594,30 +701,40 @@ function predictCard() {
   return card;
 }
 
-/* The Basis map: an OpenStreetMap background drawn by tools/map_spaces.py --bare,
-   with the spaces drawn here so ticking a location changes them. map.json places
-   every space in the background image's pixels. Dots use the light series steps
+/* The Basis map, where places are picked: an OpenStreetMap background drawn by
+   tools/map_spaces.py --bare around every sensored space, with the spaces drawn
+   here. map.json places each space in the full-size image's pixels, which are
+   also the SVG's units; the whole-area view shows a half-size copy of the same
+   frame, so its street names stay readable. Dots use the light series steps
    because the map stays light in both themes; the label, scale and credit are
    HTML so they stay readable when the map shrinks on a phone. */
 function basisMap() {
   var M = S.map, W = M.size[0], H = M.size[1], NS = "http://www.w3.org/2000/svg";
-  var box = el("div", "map");
-  /* one image for the page's life: every tick re-renders the tab, and a fresh
-     <img> would flash blank while it decodes */
-  var img = S.mapImg;
+  /* the whole-area view is the image shrunk to the card's width, so its dots are
+     scaled up to keep about the close-up's on-screen size (32 = card padding) */
+  var zoom = S.mapZoom, fit = Math.min(1, (document.getElementById("view").clientWidth - 34) / W);
+  var k = zoom ? 1 : 0.75 / fit;
+  var wrap = el("div", "mapwrap"), scroller = el("div", "mapscroll" + (zoom ? " zoom" : "")), box = el("div", "map");
+  box.style.width = zoom ? W + "px" : "100%";
+  /* one image per view for the page's life: every pick re-renders the tab, and a
+     fresh <img> would flash blank while it decodes */
+  S.mapImgs = S.mapImgs || {};
+  var which = zoom || !M.overview ? "image" : "overview", img = S.mapImgs[which];
   if (!img) {
-    img = S.mapImg = el("img");
-    img.src = M.image; img.width = W; img.height = H;
-    img.alt = "Street map of the metered spaces studied near USC";
+    img = S.mapImgs[which] = el("img");
+    img.src = M[which]; img.width = W; img.height = H;
+    img.alt = "Street map of the sensored parking spaces near the office";
   }
   box.appendChild(img);
 
   var svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+  svg.setAttribute("preserveAspectRatio", "none");
   svg.setAttribute("aria-hidden", "true");
+  if (S.mapTool === "box") svg.setAttribute("class", "boxing");
   function add(tag, attrs) {
     var n = document.createElementNS(NS, tag);
-    Object.keys(attrs).forEach(function (k) { n.setAttribute(k, attrs[k]); });
+    Object.keys(attrs).forEach(function (a) { n.setAttribute(a, attrs[a]); });
     svg.appendChild(n);
     return n;
   }
@@ -625,45 +742,163 @@ function basisMap() {
     var p = M.spaces[id];
     if (!p) return;
     attrs.cx = p[0]; attrs.cy = p[1];
-    var t = document.createElementNS(NS, "title");
-    t.textContent = label + " · " + id;
-    add("circle", attrs).appendChild(t);
+    var c = add("circle", attrs), t = document.createElementNS(NS, "title");
+    t.textContent = id + " · " + titleCase(p[2] || "") + " · " + label;
+    c.appendChild(t);
+    c.addEventListener("click", function () { pickSpaces([id]); });
   }
-  var studied = {};
+  var run = {}, mine = {}, act = activePlace();
   Object.keys(S.data.clusters).forEach(function (c) {
-    S.data.clusters[c].spaces.forEach(function (id) { studied[id] = true; });
+    S.data.clusters[c].spaces.forEach(function (id) { run[id] = c; });
   });
+  S.basis.places.forEach(function (p) { p.spaces.forEach(function (id) { mine[id] = p; }); });
   Object.keys(M.spaces).forEach(function (id) {
-    if (!studied[id]) dot(id, { r: 3, fill: "#8a8880", "fill-opacity": 0.8, stroke: "#fff", "stroke-width": 1 },
-                          "Other metered space, not studied");
+    if (!mine[id] && !run[id])
+      dot(id, { r: 2.8 * k, fill: "#8a8880", "fill-opacity": 0.8, stroke: "#fff", "stroke-width": k },
+          "collected, in no place");
   });
-  /* dropped stretches first, so kept spaces sit on top where they meet */
-  [false, true].forEach(function (on) {
-    Object.keys(S.data.clusters).forEach(function (c) {
-      if (!!S.basis.clusters[c] !== on) return;
-      var ink = MAP_INK[SLOT[c]] || MAP_INK[1];
-      S.data.clusters[c].spaces.forEach(function (id) {
-        dot(id, on ? { r: 6.5, fill: ink, stroke: "#fff", "stroke-width": 2 }
-                   : { r: 5.5, fill: "#fff", "fill-opacity": 0.7, stroke: ink, "stroke-opacity": 0.7, "stroke-width": 2 },
-            place(c) + (on ? "" : ", proposed to drop"));
-      });
+  /* in the grid now but not in the edit: a ring in the colour it has now */
+  Object.keys(run).forEach(function (id) {
+    if (!mine[id])
+      dot(id, { r: 3.6 * k, fill: "#fff", "fill-opacity": 0.75, stroke: MAP_INK[slotOf(run[id])],
+                "stroke-width": 1.6 * k }, place(run[id]) + " now, would be dropped");
+  });
+  /* the place being edited is drawn last, on top where places meet */
+  S.basis.places.slice().sort(function (a, b) { return (a === act) - (b === act); }).forEach(function (p) {
+    p.spaces.forEach(function (id) {
+      dot(id, { r: 4.2 * k, fill: MAP_INK[p.slot] || MAP_INK[1], stroke: "#fff", "stroke-width": 1.4 * k },
+          p.name + (run[id] === p.id ? "" : ", added"));
     });
   });
-  var o = M.office, x = "M" + (o[0] - 8) + " " + (o[1] - 8) + "l16 16m0 -16l-16 16";
-  add("path", { d: x, stroke: "#fff", "stroke-width": 7, "stroke-linecap": "round", fill: "none" });
-  add("path", { d: x, stroke: "#d03b3b", "stroke-width": 4, "stroke-linecap": "round", fill: "none" });
+  var o = M.office, e8 = 8 * k,
+      x = "M" + (o[0] - e8) + " " + (o[1] - e8) + "l" + 2 * e8 + " " + 2 * e8 + "m0 " + -2 * e8 + "l" + -2 * e8 + " " + 2 * e8;
+  add("path", { d: x, stroke: "#fff", "stroke-width": 7 * k, "stroke-linecap": "round", fill: "none" });
+  add("path", { d: x, stroke: "#d03b3b", "stroke-width": 4 * k, "stroke-linecap": "round", fill: "none" });
+
+  /* drag a box: every space inside joins the place being edited (or leaves it) */
+  function toMap(ev) {
+    var pt = svg.createSVGPoint();
+    pt.x = ev.clientX; pt.y = ev.clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  svg.addEventListener("pointerdown", function (ev) {
+    if (S.mapTool !== "box" || ev.button > 0) return;
+    ev.preventDefault();
+    svg.setPointerCapture(ev.pointerId);
+    var a = toMap(ev), r = add("rect", { fill: "rgba(20,20,15,.08)", stroke: "#14140f", "stroke-width": 1.5 * k,
+                                         "stroke-dasharray": 5 * k + " " + 4 * k, x: a.x, y: a.y, width: 0, height: 0 });
+    function span(ev2) {
+      var b = toMap(ev2);
+      return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
+    }
+    function move(ev2) {
+      var s = span(ev2);
+      r.setAttribute("x", s.x); r.setAttribute("y", s.y); r.setAttribute("width", s.w); r.setAttribute("height", s.h);
+    }
+    function end(ev2) {
+      svg.removeEventListener("pointermove", move);
+      svg.removeEventListener("pointerup", end);
+      svg.removeEventListener("pointercancel", end);
+      r.remove();
+      if (ev2.type !== "pointerup") return;
+      var s = span(ev2);
+      if (s.w < 4 && s.h < 4) return;
+      pickSpaces(Object.keys(M.spaces).filter(function (id) {
+        var p = M.spaces[id];
+        return p[0] >= s.x && p[0] <= s.x + s.w && p[1] >= s.y && p[1] <= s.y + s.h;
+      }));
+    }
+    svg.addEventListener("pointermove", move);
+    svg.addEventListener("pointerup", end);
+    svg.addEventListener("pointercancel", end);
+  });
   box.appendChild(svg);
 
   var tag = el("span", "tag", "Office");
-  tag.style.left = (o[0] + 13) / W * 100 + "%";
+  tag.style.left = (o[0] + 13 * k) / W * 100 + "%";
   tag.style.top = o[1] / H * 100 + "%";
   box.appendChild(tag);
+  scroller.appendChild(box);
+  wrap.appendChild(scroller);
+
+  var walk = 2 * WALK_M_PER_MIN / M.m_per_px;   // in full-size image pixels
   var sc = el("div", "scale", "<div class='bar'></div><span>2 min walk</span>");
-  sc.style.width = (2 * WALK_M_PER_MIN / M.m_per_px) / W * 100 + "%";
-  box.appendChild(sc);
-  box.appendChild(el("div", "credit",
+  sc.style.width = zoom ? walk + "px" : walk / W * 100 + "%";
+  wrap.appendChild(sc);
+  wrap.appendChild(el("div", "credit",
     "© <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"));
-  return box;
+
+  /* the close-up keeps its scroll across re-renders; the first time, it centres
+     on the places */
+  if (zoom) {
+    scroller.addEventListener("scroll", function () { S.mapScroll = [scroller.scrollLeft, scroller.scrollTop]; });
+    S.afterRender.push(function () {
+      if (!S.mapScroll) {
+        var xs = [], ys = [];
+        Object.keys(mine).forEach(function (id) { var p = M.spaces[id]; if (p) { xs.push(p[0]); ys.push(p[1]); } });
+        if (!xs.length) { xs = [o[0]]; ys = [o[1]]; }
+        S.mapScroll = [(Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2 - scroller.clientWidth / 2,
+                       (Math.min.apply(null, ys) + Math.max.apply(null, ys)) / 2 - scroller.clientHeight / 2];
+      }
+      scroller.scrollLeft = S.mapScroll[0];
+      scroller.scrollTop = S.mapScroll[1];
+    });
+  }
+  return wrap;
+}
+
+function mapTools() {
+  var bar = el("div", "maptools");
+  [[["tap", "Tap a space"], ["box", "Drag a box"]], [[true, "Close up"], [false, "Whole area"]]].forEach(function (grp, g) {
+    var chips = el("div", "chips");
+    grp.forEach(function (opt) {
+      var b = el("button", "chip", opt[1]);
+      b.setAttribute("aria-pressed", (g ? S.mapZoom : S.mapTool) === opt[0] ? "true" : "false");
+      b.onclick = function () { if (g) S.mapZoom = opt[0]; else S.mapTool = opt[0]; render(); };
+      chips.appendChild(b);
+    });
+    bar.appendChild(chips);
+  });
+  return bar;
+}
+
+/* the place list is the map's legend: each row's dot is its spaces' colour */
+function placeRow(p, spacesMeta) {
+  var on = p === activePlace(), running = S.data.clusters[p.id];
+  var row = el("div", "placerow" + (on ? " on" : ""));
+  row.style.setProperty("--c", "var(--s" + p.slot + ")");
+  row.onclick = function (ev) {
+    if (ev.target.closest("input,button")) return;
+    S.basis.active = p.id; saveBasis(); render();
+  };
+  var rb = el("input"); rb.type = "radio"; rb.name = "active-place"; rb.checked = on;
+  rb.setAttribute("aria-label", "Edit " + p.name);
+  rb.onchange = function () { S.basis.active = p.id; saveBasis(); render(); };
+  var txt = el("div", "grow");
+  var nm = el("input", "pname"); nm.type = "text"; nm.value = p.name; nm.maxLength = 60;
+  nm.setAttribute("aria-label", "Name of this place");
+  nm.onchange = function () { p.name = nm.value.trim() || p.name; saveBasis(); render(); };
+  txt.appendChild(nm);
+  var was = {}, bits = [], faces = {};
+  (running ? running.spaces : []).forEach(function (s) { was[s] = true; });
+  var added = p.spaces.filter(function (s) { return !was[s]; }).length;
+  var dropped = running ? running.spaces.filter(function (s) { return p.spaces.indexOf(s) < 0; }).length : 0;
+  bits.push(p.spaces.length ? p.spaces.length + (p.spaces.length === 1 ? " space" : " spaces") : "empty, so left out");
+  if (!running) bits.push("new");
+  if (added && running) bits.push(added + " added");
+  if (dropped) bits.push(dropped + " dropped");
+  if (on) bits.push("editing");
+  txt.appendChild(el("div", "de", "<span class='swatch'></span>" + bits.join(" · ")));
+  p.spaces.forEach(function (s) { var m = spacesMeta[s]; if (m && m[2]) faces[m[2]] = true; });
+  if (Object.keys(faces).length) txt.appendChild(el("div", "de", Object.keys(faces).sort().join(", ")));
+  row.appendChild(rb); row.appendChild(txt);
+  if (S.basis.places.length > 1) {
+    var x = el("button", "x", "×");
+    x.setAttribute("aria-label", "Remove " + p.name);
+    x.onclick = function () { removePlace(p); };
+    row.appendChild(x);
+  }
+  return row;
 }
 
 /* ---------------- Part 1: the basis ---------------- */
@@ -671,40 +906,46 @@ function viewBasis() {
   var f = document.createDocumentFragment();
   var d = S.data;
 
-  if (basisDirty()) {
-    f.appendChild(banner("<strong>Unapplied changes.</strong> This page can’t reach the collectors. " +
-      "Copy the block at the bottom into your chat with Claude and it’ll be applied to both.", true));
-  }
-
   var m = el("div", "card");
   m.appendChild(el("h2", null, "Where"));
-  m.appendChild(el("p", "hint", "The stretches being measured. Untick one to propose dropping it; its spaces fade on the map."));
-  if (S.map) m.appendChild(basisMap());
-  /* the tick list is the map's legend: each row's dot is its spaces' colour */
-  var kept = 0, total = 0;
-  Object.keys(d.clusters).sort().forEach(function (c) {
-    var info = d.clusters[c], on = !!S.basis.clusters[c];
-    total += info.n_spaces;
-    if (on) kept += info.n_spaces;
-    var row = el("label", "blockrow");
-    row.style.setProperty("--c", "var(--s" + (SLOT[c] || 1) + ")");
-    var cb = el("input"); cb.type = "checkbox"; cb.checked = on;
-    cb.onchange = function () { S.basis.clusters[c] = cb.checked; saveBasis(); render(); };
-    var txt = el("div");
-    txt.appendChild(el("div", "nm", "<span class='swatch" + (on ? "" : " off") + "'></span>" + place(c)));
-    txt.appendChild(el("div", "de", info.n_spaces + " spaces" + (on ? "" : ", proposed to drop") +
-                                    " · " + info.blockfaces.join(", ")));
-    row.appendChild(cb); row.appendChild(txt);
-    m.appendChild(row);
-  });
+  m.appendChild(el("p", "hint", "Every sensored space near the office is collected, so a place can change without losing " +
+    "history. Choose the place to edit below, then tap a space or drag a box around several: they join it, or, if " +
+    "they’re all in it already, they leave it."));
+  if (S.map) { m.appendChild(mapTools()); m.appendChild(basisMap()); }
+  var spacesMeta = (S.map && S.map.spaces) || {};
+  S.basis.places.slice().sort(function (a, b) { return a.slot - b.slot; })
+    .forEach(function (p) { m.appendChild(placeRow(p, spacesMeta)); });
+  var addRow = el("div", "addrow"), ab = el("button", "btn secondary", "+ Add a place");
+  ab.disabled = S.basis.places.length >= MAX_PLACES;
+  ab.onclick = addPlace;
+  addRow.appendChild(ab);
+  addRow.appendChild(el("span", null, "Up to three: past that, the map’s colours can’t be told apart reliably."));
+  m.appendChild(addRow);
+
+  var was = {}, now = {}, nWas = 0, nNow = 0;
+  Object.keys(d.clusters).forEach(function (c) { d.clusters[c].spaces.forEach(function (s) { was[s] = true; nWas++; }); });
+  S.basis.places.forEach(function (p) { p.spaces.forEach(function (s) { now[s] = true; nNow++; }); });
+  var added = Object.keys(now).filter(function (s) { return !was[s]; }).length;
+  var dropped = Object.keys(was).filter(function (s) { return !now[s]; }).length;
   var key = el("div", "key");
-  key.appendChild(el("span", "count", kept === total ? total + " spaces measured"
-                                                     : kept + " of " + total + " spaces would stay"));
+  key.appendChild(el("span", "count", added || dropped
+    ? nNow + " spaces would be in the grid · " + added + " added, " + dropped + " dropped"
+    : nWas + " spaces in the grid"));
   if (S.map) {
-    key.appendChild(el("span", null, "<span class='swatch other'></span>Other metered spaces, not studied"));
+    key.appendChild(el("span", null, "<span class='swatch other'></span>Other sensored spaces, collected but in no place"));
+    if (dropped) key.appendChild(el("span", null,
+      "<span class='swatch off' style='--c:var(--ink-2)'></span>In the grid now, would be dropped"));
     key.appendChild(el("span", null, "<span class='kx'>×</span>Office"));
   }
   m.appendChild(key);
+  /* below the map, never above it: appearing on the first pick must not shift
+     the map under the pointer */
+  if (basisDirty()) {
+    var bn = banner("<strong>Unapplied changes.</strong> This page can’t change what’s measured by itself. " +
+      "Copy the block at the bottom into your chat with Claude to apply it.", true);
+    bn.style.margin = "12px 0 0";
+    m.appendChild(bn);
+  }
   f.appendChild(m);
 
   var w = el("div", "card");
@@ -760,18 +1001,13 @@ function viewBasis() {
     ? "Copy this and paste it into your chat with Claude."
     : "Nothing differs from what’s currently running."));
   var pre = el("pre", "cfg");
-  pre.textContent = JSON.stringify({
-    clusters: Object.keys(S.basis.clusters).filter(function (c) { return S.basis.clusters[c]; }),
-    hours: [S.basis.timeStart, S.basis.timeEnd],
-    weekdaysOnly: S.basis.weekdaysOnly,
-    until: S.basis.until || null
-  }, null, 2);
+  pre.textContent = cfgText();
   out.appendChild(pre);
   var bar = el("div");
   bar.style.cssText = "display:flex;gap:8px;margin-top:12px;flex-wrap:wrap";
   var cp = el("button", "btn", "Copy for Claude");
   cp.onclick = function () {
-    navigator.clipboard.writeText("Apply this collection basis:\n" + pre.textContent).then(
+    navigator.clipboard.writeText("Apply these places and collection basis:\n" + pre.textContent).then(
       function () { cp.textContent = "Copied"; setTimeout(function () { cp.textContent = "Copy for Claude"; }, 1600); },
       function () { cp.textContent = "Copy failed — select the text"; });
   };
@@ -799,9 +1035,6 @@ fetch("data.json", { cache: "no-store" })
     S.data = j;
     S.period = j.default_period;
     S.basis = loadBasis() || defaultBasis();
-    Object.keys(j.clusters).forEach(function (c) {
-      if (!(c in S.basis.clusters)) S.basis.clusters[c] = true;
-    });
     return mapLoad;
   })
   .then(function (mj) {

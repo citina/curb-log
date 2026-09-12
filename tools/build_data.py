@@ -39,10 +39,14 @@ ignored — the archive is the complete record; polls are a stand-in until it is
 published. PERIODS ARE NEVER BLENDED: summer and term are aggregated separately
 (midday vacancy on these spaces ran ~49% in summer, ~6% in term).
 
+WHAT IS STUDIED comes from places.json: each place is a named set of spaces
+(its "cluster" below), picked on the page's Basis map. Collection covers every
+sensored space nearby, so changing a place needs no change to the pollers.
+
   ./build_data.py --out ../docs/data.json
   ./build_data.py --report            # print the grids in the terminal
 """
-import argparse, collections, csv, datetime as dt, glob, json, os, re, sys
+import argparse, collections, csv, datetime as dt, glob, json, os, sys
 from zoneinfo import ZoneInfo
 
 LA = ZoneInfo("America/Los_Angeles")
@@ -85,11 +89,6 @@ def _weekdays(ranges):
 
 
 EXCLUDED = _weekdays(NOT_NORMAL)
-
-
-def cluster_of(blockface):
-    m = re.match(r"^(\d+)\s+(.*)$", blockface.strip())
-    return f"{m.group(2)} {int(m.group(1)) // 100}xx" if m else blockface
 
 
 def period_of(d):
@@ -292,7 +291,7 @@ def report(payload):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--ids", default="sensored_ids.txt")
+    p.add_argument("--places", default="places.json", help="the places studied, each a named set of spaces")
     p.add_argument("--spaces", default="spaces.json")
     p.add_argument("--archive", default="usc_*.csv", help="glob of LADOT archive extracts")
     p.add_argument("--archive-cache", default="archive_cells.json")
@@ -306,40 +305,65 @@ def main():
     p.add_argument("--hold", type=float, default=10, help="max minutes a poll snapshot is held")
     p.add_argument("--out", default="../docs/data.json")
     p.add_argument("--report", action="store_true")
+    p.add_argument("--stale-extracts", action="store_true",
+                   help="only list the cached extracts that must be fetched again before a build "
+                        "(archive.yml uses this after places.json changes)")
     a = p.parse_args()
 
     ws, we = parse_window(a.window)
-    ids = [l.strip() for l in open(a.ids) if l.strip()]
     meta = json.load(open(a.spaces))
-    cluster_spaces = collections.defaultdict(list)
-    for s in ids:
-        if s in meta:
-            cluster_spaces[cluster_of(meta[s]["blockface"])].append(s)
+    places = json.load(open(a.places))["places"]
+    cluster_spaces, owner = {}, {}
+    for pl in places:
+        if not pl["spaces"]:
+            sys.exit(f"{a.places}: {pl['id']} has no spaces")
+        for s in pl["spaces"]:
+            if s not in meta:
+                sys.exit(f"{a.places}: {s} in {pl['id']} isn't a sensored space in {a.spaces}")
+            if s in owner:
+                sys.exit(f"{a.places}: {s} is in both {owner[s]} and {pl['id']}")
+            owner[s] = pl["id"]
+        cluster_spaces[pl["id"]] = list(pl["spaces"])
     sizes = {c: len(ss) for c, ss in cluster_spaces.items()}
 
-    acc = Acc(ws, we, a.slot, sizes, a.min_known)
-    print("building:", file=sys.stderr)
     # The cache is keyed by extract file, so a run holding only some extracts
     # (CI holds only May-June; a new month arrives alone) recomputes what it has and
     # keeps the rest instead of silently dropping it.
     cache = json.load(open(a.archive_cache)) if os.path.exists(a.archive_cache) else {}
     files = cache.get("files", {})
-    # Cached cells are cut to one window and slot ([start_min, end_min, slot_min])
-    # and swept under one method (stale cut, minimum known share). Mixing cuts
-    # would leave columns silently empty or blend two methods, so a mismatched
-    # cache is only usable if every extract in it is here to recompute. (An
-    # unstamped cache predates the stamps and was cut to 8-16.)
-    grid = [ws, we, a.slot]
-    method = {"stale_hours": a.stale_hours, "min_known": a.min_known}
-    was = (cache.get("grid", [480, 960, 30]), cache.get("method"))
-    if files and was != (grid, method):
-        here = {os.path.basename(p) for p in glob.glob(a.archive)}
-        gone = sorted(set(files) - here)
+    # Cached cells are cut to one window and slot ([start_min, end_min, slot_min]),
+    # swept under one method (stale cut, minimum known share) and over one set of
+    # places, since a cell is a sweep of exactly its place's spaces. Mixing cuts
+    # would leave columns silently empty, blend two methods or credit a place
+    # with spaces it no longer has, so a mismatched cache is only usable if every
+    # extract in it is here to recompute. (An unstamped cache predates the stamps
+    # and was cut to 8-16.)
+    stamp = {"grid": [ws, we, a.slot],
+             "method": {"stale_hours": a.stale_hours, "min_known": a.min_known},
+             "places": {c: sorted(ss) for c, ss in cluster_spaces.items()}}
+    was = {"grid": cache.get("grid", [480, 960, 30]), "method": cache.get("method"),
+           "places": cache.get("places")}
+    differs = [k for k in stamp if files and was[k] != stamp[k]]
+    here = {os.path.basename(p) for p in glob.glob(a.archive)}
+    gone = sorted(set(files) - here) if differs else []
+    if a.stale_extracts:
+        print("\n".join(gone))
+        return
+    if differs:
         if gone:
-            sys.exit(f"{a.archive_cache} is cut to grid {was[0]} with method {was[1]}, not {grid} with "
-                     f"{method}, and {', '.join(gone)} isn't here to recompute. "
-                     f"Fetch it with fetch_history.py first.")
+            sys.exit(f"{a.archive_cache} was cut with a different {' and '.join(differs)}, and "
+                     f"{', '.join(gone)} isn't here to recompute. Fetch it with fetch_history.py "
+                     f"first (in CI, archive.yml does this when places.json changes).")
         files = {}
+
+    order_path = os.path.join(a.data_dir, "space_order.txt")
+    if os.path.exists(order_path):
+        polled = {l.strip() for l in open(order_path) if l.strip() and not l.startswith("#")}
+        if set(owner) - polled:
+            print(f"  not polled, so archive only: {', '.join(sorted(set(owner) - polled))}", file=sys.stderr)
+
+    acc = Acc(ws, we, a.slot, sizes, a.min_known)
+    print("building:", file=sys.stderr)
     for path in sorted(glob.glob(a.archive)):
         one = Acc(ws, we, a.slot, sizes, a.min_known)
         dates = load_archive([path], cluster_spaces, one, a.stale_hours)
@@ -357,8 +381,7 @@ def main():
                 cell[i] += v[i]
             acc.sources[day].add("archive")
     if files:
-        json.dump({"grid": grid, "method": method, "files": files}, open(a.archive_cache, "w"),
-                  separators=(",", ":"))
+        json.dump(dict(stamp, files=files), open(a.archive_cache, "w"), separators=(",", ":"))
         print(f"  archive extracts in cache: {', '.join(sorted(files))}", file=sys.stderr)
     load_polls(a.data_dir, cluster_spaces, acc, a.hold, covered)
 
@@ -395,9 +418,12 @@ def main():
         "stale_hours": a.stale_hours, "min_known": a.min_known,
         "excluded_days": EXCLUDED,
         "term_start": "2026-08-24", "sensors_live": "2026-05-12",
-        "clusters": {c: {"n_spaces": len(ss), "spaces": ss, "centroid": centroid(c),
-                         "blockfaces": sorted({meta[s]["blockface"] for s in ss})}
-                     for c, ss in sorted(cluster_spaces.items())},
+        # keyed by place id; name and slot (its colour) are what the page shows
+        "clusters": {pl["id"]: {"name": pl["name"], "slot": pl.get("slot"),
+                                "n_spaces": len(pl["spaces"]), "spaces": pl["spaces"],
+                                "centroid": centroid(pl["id"]),
+                                "blockfaces": sorted({meta[s]["blockface"] for s in pl["spaces"]})}
+                     for pl in sorted(places, key=lambda q: q["id"])},
         "periods": periods,
         "default_period": periods[0]["id"] if periods else None,
     }

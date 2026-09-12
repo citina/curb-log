@@ -11,14 +11,16 @@ Highlighted clusters are drawn solid; everything else currently tracked is drawn
 muted, so the difference between "what you asked for" and "what is running" is
 visible at a glance.
 
-For the page's Basis map, draw the background alone and let the page draw the
-spaces, so ticking a location can change them:
+For the page's Basis map, where places are picked, draw the background alone
+around every sensored space and let the page draw the spaces:
 
-  ./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx" --bare \
-                  --out ../docs/basemap.png --json ../docs/map.json
+  ./map_spaces.py --bare --out ../docs/basemap.png \
+                  --overview ../docs/basemap-overview.png --json ../docs/map.json
 
 map.json holds the image size, metres per pixel (for the walking scale), and the
-pixel position of the office and of every space inside the frame.
+pixel position of the office and of every space inside the frame, with its
+block face. The overview is the same frame one zoom level out, for the page's
+whole-area view, where the full image's street names would be too small to read.
 
 Tiles come from OpenStreetMap under their usage policy: a handful of tiles, a
 descriptive User-Agent, cached on disk so re-runs do not refetch. Anything that
@@ -73,6 +75,36 @@ def cluster_of(blockface):
     return f"{m.group(2)} {int(m.group(1))//100}xx" if m else blockface
 
 
+def stitch(n, s, e, w, z):
+    """The frame n/s/e/w at zoom z, faded. Returns the image, a lat/lon -> tile-grid
+    pixel function, and the crop's offset into that grid."""
+    x0f, y0f = deg2num(n, w, z)
+    x1f, y1f = deg2num(s, e, z)
+    tx0, ty0, tx1, ty1 = int(x0f), int(y0f), int(x1f), int(y1f)
+
+    img = Image.new("RGB", ((tx1 - tx0 + 1) * TILE, (ty1 - ty0 + 1) * TILE), "white")
+    for tx in range(tx0, tx1 + 1):
+        for ty in range(ty0, ty1 + 1):
+            img.paste(get_tile(z, tx, ty), ((tx - tx0) * TILE, (ty - ty0) * TILE))
+
+    def px(lat, lon):
+        x, y = deg2num(lat, lon, z)
+        return (x - tx0) * TILE, (y - ty0) * TILE
+
+    left, top = px(n, w)
+    right, bottom = px(s, e)
+    img = img.crop((int(left), int(top), int(right), int(bottom)))
+    # Fade the basemap so the markers carry the eye
+    img = Image.blend(img, Image.new("RGB", img.size, "white"), 0.32)
+    return img, px, int(left), int(top)
+
+
+def save_background(img, path):
+    """A faded map needs few colours: 128 cut the whole-area image from 1.9 MB
+    to 0.6 MB with no visible change, which matters on a phone."""
+    img.quantize(colors=128, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(path, optimize=True)
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--spaces", default="spaces.json")
@@ -84,6 +116,7 @@ def main():
     p.add_argument("--bare", action="store_true",
                    help="background only: no spaces, labels or legend (the page draws them)")
     p.add_argument("--json", help="also write the frame and each space's pixel position here")
+    p.add_argument("--overview", help="also write the same frame one zoom level out here")
     a = p.parse_args()
 
     meta = json.load(open(a.spaces))
@@ -104,26 +137,11 @@ def main():
     n, s = max(lats) + a.pad, min(lats) - a.pad
     e, w = max(lons) + a.pad * 1.2, min(lons) - a.pad * 1.2
 
-    x0f, y0f = deg2num(n, w, a.zoom)
-    x1f, y1f = deg2num(s, e, a.zoom)
-    tx0, ty0, tx1, ty1 = int(x0f), int(y0f), int(x1f), int(y1f)
-
-    img = Image.new("RGB", ((tx1 - tx0 + 1) * TILE, (ty1 - ty0 + 1) * TILE), "white")
-    for tx in range(tx0, tx1 + 1):
-        for ty in range(ty0, ty1 + 1):
-            img.paste(get_tile(a.zoom, tx, ty), ((tx - tx0) * TILE, (ty - ty0) * TILE))
-
-    def px(lat, lon):
-        x, y = deg2num(lat, lon, a.zoom)
-        return (x - tx0) * TILE, (y - ty0) * TILE
-
-    left, top = px(n, w)
-    right, bottom = px(s, e)
-    img = img.crop((int(left), int(top), int(right), int(bottom)))
-    ox, oy = int(left), int(top)
-
-    # Fade the basemap so the markers carry the eye
-    img = Image.blend(img, Image.new("RGB", img.size, "white"), 0.32)
+    img, px, ox, oy = stitch(n, s, e, w, a.zoom)
+    if a.overview:
+        ov = stitch(n, s, e, w, a.zoom - 1)[0]
+        save_background(ov, a.overview)
+        print(f"{a.overview}  {ov.size[0]}x{ov.size[1]} (overview, zoom {a.zoom - 1})")
 
     if a.json:
         W, H = img.size
@@ -138,9 +156,10 @@ def main():
             if ll:
                 xy = rel(float(ll["latitude"]), float(ll["longitude"]))
                 if 0 <= xy[0] <= W and 0 <= xy[1] <= H:
-                    inside[sid] = xy
+                    inside[sid] = xy + [m.get("blockface", "?")]
         json.dump({
             "image": os.path.basename(a.out), "size": [W, H],
+            "overview": os.path.basename(a.overview) if a.overview else None,
             # ground distance per image pixel at this zoom and latitude (Web Mercator)
             "m_per_px": round(156543.03392 * math.cos(math.radians((n + s) / 2)) / 2 ** a.zoom, 4),
             "office": rel(olat, olon),
@@ -149,7 +168,7 @@ def main():
         print(f"{a.json}  {len(inside)} spaces inside the frame")
 
     if a.bare:
-        img.save(a.out)
+        save_background(img, a.out)
         print(f"{a.out}  {img.size[0]}x{img.size[1]} (background only)")
         return
 

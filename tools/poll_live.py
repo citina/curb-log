@@ -20,6 +20,14 @@ order file: V vacant, O occupied, ? not reported this poll. ~270 bytes a poll,
 so a month is a couple of MB -- small enough to commit from CI, and trivially
 mergeable across collectors (concatenate; each line stands alone).
 
+WHAT IS POLLED
+Every sensored space within 800 m of the office (sensored_ids.txt), not just the
+ones studied. Which spaces count is decided when the page is built
+(places.json), so a place can grow or shrink without touching the pollers, and a
+space added later already has its history. The list only ever grows at the end:
+columns are positional, and an older, shorter line simply has no column for a
+newer space, which the build reads as unknown.
+
   ./poll_live.py --ids sensored_ids.txt --collector laptop
 
 Each collector writes its own subdirectory (data/<collector>/YYYY-MM-DD.csv).
@@ -87,19 +95,20 @@ def main():
     out_dir = os.path.join(a.data_dir, a.collector)
     os.makedirs(out_dir, exist_ok=True)
 
-    # Pin the column order. If the space list ever changes, past files stay
-    # readable because each one records the order it was written against.
+    # Pin the column order. It may only grow at the end: every existing column
+    # keeps its place, so past lines stay readable. Reordering or removing a
+    # space would silently shift every column after it.
     order_path = os.path.join(a.data_dir, "space_order.txt")
     digest = hashlib.sha1("\n".join(ids).encode()).hexdigest()[:8]
-    if not os.path.exists(order_path):
+    have = ([l.strip() for l in open(order_path) if l.strip() and not l.startswith("#")]
+            if os.path.exists(order_path) else [])
+    if ids[:len(have)] != have:
+        sys.exit(f"{a.ids} doesn't start with the {len(have)} spaces in {order_path}, in that order. "
+                 f"Columns are positional: add new spaces at the end; never reorder or remove one.")
+    if len(ids) > len(have):
         with open(order_path, "w") as f:
             f.write("# sha1:%s\n" % digest)
             f.write("\n".join(ids) + "\n")
-    else:
-        have = open(order_path).readline().strip()
-        if have != "# sha1:%s" % digest:
-            sys.exit(f"Space list changed ({have} -> # sha1:{digest}). "
-                     f"Start a new --data-dir rather than mixing orders.")
 
     now = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
     day = now[:10]
