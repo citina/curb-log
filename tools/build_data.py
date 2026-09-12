@@ -320,7 +320,7 @@ def main():
     acc = Acc(ws, we, a.slot, sizes, a.min_known)
     print("building:", file=sys.stderr)
     # The cache is keyed by extract file, so a run holding only some extracts
-    # (CI holds none; a new month arrives alone) recomputes what it has and
+    # (CI holds only May-June; a new month arrives alone) recomputes what it has and
     # keeps the rest instead of silently dropping it.
     cache = json.load(open(a.archive_cache)) if os.path.exists(a.archive_cache) else {}
     files = cache.get("files", {})

@@ -3,8 +3,9 @@ name: fold in new archive months
 # LADOT publishes each month of its sensor archive (cj8s-ivry) about two months
 # late, on no fixed day. Once a day this looks for published months missing
 # from tools/archive_cells.json, streams just our spaces out of each
-# (fetch_history.py), and adds their cells to the cache. The extracts stay out
-# of git; the cache is what the page is built from.
+# (fetch_history.py), and adds their cells to the cache. New months' extracts
+# stay out of git (only May-June's is committed); the cache is what the page is
+# built from.
 on:
   schedule:
     - cron: "23 15 * * *"   # best-effort, which is fine here: a late run delays a month by a day

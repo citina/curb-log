@@ -1,5 +1,7 @@
 # Bulk archive pulls — 200-300MB each, regenerable via fetch_history.py
 tools/usc_*.csv
+# ...except May-June (17MB, the whole summer for all 248 sensored spaces), kept in git
+!tools/usc_may_jun.csv
 tools/wv_*.csv
 tools/wv_spaces.json
 *.sqlite

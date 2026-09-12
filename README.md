@@ -168,8 +168,9 @@ them needs every extract in the cache present to recompute — `build_data.py`
 stops with a message rather than leave columns empty or mix two methods.
 Holidays and periods are applied when days are summed, so editing those needs
 no recompute.
-`usc_may_jun.csv` exists only on the laptop; `fetch_history.py` re-streams any
-month.
+`usc_may_jun.csv` (12 May – 30 June, every event for all 248 sensored spaces
+nearby) is committed; later months' extracts stay out of git, and
+`fetch_history.py` re-streams any month.
 
 Validation of polling against the archive needs *overlapping* days. Polling began
 9 September, so the first overlap arrives with the September file (~early
