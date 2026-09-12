@@ -39,6 +39,11 @@ Until a month's archive arrives, the page fills in from our own check of the
 live feed every five minutes, weekdays 8:00 am–4:30 pm. When the archive covers
 a day, it replaces those checks.
 
+**A sensor can be late or wrong.** On 11 September one sensor logged a car
+arriving within a minute but logged it leaving an hour late. The archive can't
+correct that, since it records what the sensors reported. Checking the curb by
+hand isn't possible at this scale, so the page assumes the sensor record is right.
+
 ## Summer is not term
 
 The sensors went in on 12 May 2026, so the only history before term is summer.
