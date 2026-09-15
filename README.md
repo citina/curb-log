@@ -99,12 +99,17 @@ five minutes, and each run appends one line to `tools/data/ci/`:
 | Body | `{"ref":"main"}` |
 | Schedule | every 5 minutes, hours 8–16, Monday–Friday, time zone America/Los_Angeles |
 | Success | HTTP 204 |
+| Notifications | e-mail on a failed run, on recovery, and on auto-disable |
 
 The token is a fine-grained one limited to this repository with Actions: read and
-write, and it lives only in cron-job.org. It expires on the date picked when it
-was made, and polling stops when it does, so renew it before then. The dispatches
-after 4:30 poll nothing (`poll_live.py` applies the exact window), but the 4:30
-one still publishes the day's last half hour.
+write, and it lives only in cron-job.org. **It expires on 10 November 2026**, and
+polling stops dead that day, so renew it before then and update this date. GitHub
+shows it under Settings → Developer settings → Personal access tokens →
+Fine-grained tokens; the new value replaces the old one in the job's
+`Authorization` header. An expired token answers 401 rather than 204, which the
+job's failure e-mail surfaces instead of the polling just going quiet. The
+dispatches after 4:30 poll nothing (`poll_live.py` applies the exact window), but
+the 4:30 one still publishes the day's last half hour.
 
 **One writer.** `tools/publisher.txt` names the only thing that rebuilds
 `docs/data.json`: `laptop` or `ci`. While it says `laptop`, the laptop publisher
