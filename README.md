@@ -113,20 +113,24 @@ runs rebuild it and `publish.py` does nothing. `archive.yml` obeys the same file
 `data_through` is stamped from the newest data rather than the clock, so a
 rebuild with nothing new produces no commit.
 
-**The laptop, until cutover.** `install_poller.sh` installs two launchd jobs: the
-poller (every 5 minutes, into `tools/data/laptop/`) and the publisher
+**The laptop, retired 15 September.** `install_poller.sh` installs two launchd
+jobs: the poller (every 5 minutes, into `tools/data/laptop/`) and the publisher
 (`publish.py`, every 30 minutes), which pulls, rebuilds `docs/data.json`, and
 pushes, with pathspec-limited commits so nothing else in the working copy is
 swept up. Both run only while the Mac is awake: on 10 September it took 65 of
-108 five-minute polls. Once `tools/data/ci/` shows a full weekday at about 12
-polls an hour (`cut -c12-13 tools/data/ci/<day>.csv | sort | uniq -c` counts
-them per UTC hour; 8am–4:30pm PDT is 15:00–23:30 UTC), cut over:
+108 five-minute polls, and on 15 September it took none — the page sat a day
+stale on yesterday's data while CI held that morning complete, which is what
+`publisher.txt` was flipped to `ci` to end. The criterion it had to meet first
+was a full weekday of CI polls at about 12 an hour (`cut -c12-13
+tools/data/ci/<day>.csv | sort | uniq -c` counts them per UTC hour; 8am–4:30pm
+PDT is 15:00–23:30 UTC), which 14 September met exactly.
 
-1. `./publish.py` once, so the laptop's last polls are pushed.
-2. Set `tools/publisher.txt` to `ci`; commit and push.
-3. `launchctl bootout gui/$(id -u)/com.citina.curblog.poll` and the same for
-   `com.citina.curblog.publish`, then delete both plists from
-   `~/Library/LaunchAgents`.
+Nothing now depends on the Mac. To finish the teardown on it:
+`launchctl bootout gui/$(id -u)/com.citina.curblog.poll` and the same for
+`com.citina.curblog.publish`, then delete both plists from
+`~/Library/LaunchAgents`. Until that runs, the poller keeps writing
+`tools/data/laptop/` locally and `publish.py` no longer pushes it, so those
+polls stay on the Mac.
 
 **The page deploys from `.github/workflows/pages.yml`**, not GitHub's branch
 build, so only a change under `docs/` publishes it; under the branch build every
