@@ -79,8 +79,10 @@ The list lives in `NOT_NORMAL` at the top of `tools/build_data.py`.
 
 ### The sweep
 
-A *stretch* is a group of neighbouring spaces you'd drive as one: the 44 on
-Vermont between 36th and 37th Streets, and the 11 on 36th Street west of Vermont.
+A *stretch* (a "place" on the page) is a group of neighbouring spaces you'd
+drive as one: the 65 on Vermont from 36th Street down to 37th Drive, and the 11
+on 36th Street west of Vermont. `tools/places.json` lists them; they are picked
+on the page's Basis map.
 For each, `tools/build_data.py` merges all its spaces' events in time order and
 walks through them, keeping a running count of spaces **known** and spaces
 **vacant**. Each stretch of time in which nothing changes is split at the

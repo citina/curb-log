@@ -6,9 +6,16 @@ name: fold in new archive months
 # (fetch_history.py), and adds their cells to the cache. New months' extracts
 # stay out of git (only May-June's is committed); the cache is what the page is
 # built from.
+#
+# The cache is cut to one set of places, so a change to tools/places.json also
+# runs this: build_data.py --stale-extracts names the cached months whose
+# extracts must be fetched again to recompute.
 on:
   schedule:
     - cron: "23 15 * * *"   # best-effort, which is fine here: a late run delays a month by a day
+  push:
+    branches: [main]
+    paths: [tools/places.json]
   workflow_dispatch:
 
 concurrency:
@@ -28,15 +35,17 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch months the cache lacks
+      - name: Fetch months the cache lacks or must recompute
         id: fetch
         working-directory: tools
         run: |
           new=""
+          stale=" $(python3 build_data.py --stale-extracts | tr '\n' ' ') "
           for m in $(python3 fetch_history.py --list | sed 's/^Published months: //; s/,/ /g'); do
             [[ "$m" < "2026-07" ]] && continue      # May-June are in usc_may_jun.csv; nothing earlier exists
             f="usc_${m/-/_}.csv"
-            grep -q "\"$f\"" archive_cells.json && continue
+            grep -q "\"$f\"" archive_cells.json && [[ "$stale" != *" $f "* ]] && continue
+            # every sensored space nearby, not just the places, so a later change needs no refetch here
             python3 fetch_history.py --ids sensored_ids.txt --months "$m" --out "$f"
             new="$new $m"
           done

@@ -4,20 +4,33 @@ Finding out when street parking is available on the stretch actually walkable
 from an office near USC DPS, using LADOT's open sensor data rather than manual
 observation.
 
-**Scope (confirmed on a map, 9 Sep 2026): 55 sensored spaces.**
+**Scope (picked on a map, 11 Sep 2026): 76 sensored spaces in two places.**
 
-| Cluster | Spaces | Where |
+| Place | Spaces | Where |
 |---|---:|---|
-| `VERMONT AVE 36xx` | 44 | Vermont, West 36th St down to ~37th St, both sides |
-| `36TH ST 11xx` | 11 | West 36th St just west of Vermont, by the park |
+| `vermont` | 65 | Vermont Ave, West 36th St down to 37th Dr, both sides |
+| `36th-st` | 11 | West 36th St just west of Vermont, by the park |
 
-Vermont 37xx sits south of 37th Place and was rejected as too far to walk, as
-were the other ten metered streets in the area. Beyond this stretch the
-fallback is free (unmetered) street parking, which has no sensors — so "how
-often is this stretch empty" matters as much as "how many spaces are free".
-`map_spaces.py --bare` redraws the Basis tab's street map (the page draws the
-spaces on it from `docs/map.json`, so ticking a location changes them);
-block-face numbers are unreadable as geography and caused a scoping mistake before the map existed.
+**`tools/places.json` is the one definition of what is studied.** Collection is
+wider: all 248 sensored spaces within 800 m of the office are polled, and the
+archive extracts keep all of them too. So a place can grow or shrink without
+touching the pollers, and a space added later already has its history. To
+change one, pick the spaces on the page's Basis map (tap one, or drag a box
+around several) and paste the block it gives you into a chat with Claude.
+
+Places used to be LADOT hundred-blocks. That cut six sensored spaces between
+37th St and 37th Pl out of the middle of the Vermont stretch, because their
+block face (3700/3701) runs on south of 37th Pl, which was then out of scope.
+All 21 spaces of those block faces joined Vermont on 11 Sep. Block-face numbers
+are unreadable as geography, which is why places are picked on a map. Beyond
+these places the fallback is free (unmetered) street parking, which has no
+sensors — so "how often is this stretch empty" matters as much as "how many
+spaces are free".
+
+Polling covered only the old 44 Vermont spaces on 10–11 Sep, below the 80% of
+a place that must be known for time to count, so Vermont's term grid has no
+polls for those two days; the September archive (~early November) fills them
+in. 9 Sep afternoon survives because polling was still wide then.
 
 ## Data sources (data.lacity.org)
 
@@ -38,9 +51,9 @@ term-time history exists. That is why `poll_live.py` exists.
 
 ```
 ./find_spaces.py --near 34.0206,-118.2890 --radius 800     # which spaces, and which are sensored
-./fetch_history.py --ids sensored_ids.txt --months 2026-08 # stream a monthly archive, keep only ours
-./build_data.py --report                                   # the page's data; grids in the terminal
-./map_spaces.py --highlight "VERMONT AVE 36xx,36TH ST 11xx" --bare --out ../docs/basemap.png --json ../docs/map.json
+./fetch_history.py --ids sensored_ids.txt --months 2026-08 # stream a monthly archive, keep all 248 nearby
+./build_data.py --report                                   # the page's data, for places.json; grids in the terminal
+./map_spaces.py --bare --out ../docs/basemap.png --overview ../docs/basemap-overview.png --json ../docs/map.json
 ./poll_live.py --ids sensored_ids.txt --collector laptop   # one snapshot
 ./install_poller.sh                                        # laptop poller (5 min) + publisher (30 min)
 ./publish.py                                               # what the publisher runs
@@ -77,6 +90,12 @@ answer would be biased long. Sampling the state instead is provably adequate —
 
 So the poller appends one line per poll — `polled_at_utc,states`, one character
 per space — and the event log was dropped rather than shipped with a known bias.
+
+Every sensored space nearby gets a column (`tools/sensored_ids.txt`), in the
+order pinned by `tools/data/space_order.txt`. That order only ever grows at the
+end: an older, shorter line has no column for a newer space, which the build
+reads as unknown, whereas reordering or dropping a space would shift every
+column after it, so `poll_live.py` refuses to.
 
 ### Collection
 
@@ -166,10 +185,14 @@ it has and keeps the rest. `.github/workflows/archive.yml` checks daily for
 newly published months, streams each into `tools/usc_YYYY_MM.csv` with
 `fetch_history.py`, and commits the updated cache; the next build folds it in.
 
-The cache is stamped with the window and slot its cells were cut to and the
-method they were swept with (`--stale-hours`, `--min-known`). Changing any of
-them needs every extract in the cache present to recompute — `build_data.py`
-stops with a message rather than leave columns empty or mix two methods.
+The cache is stamped with the window and slot its cells were cut to, the
+method they were swept with (`--stale-hours`, `--min-known`) and the places they
+were swept over. Changing any of them needs every extract in the cache present
+to recompute — `build_data.py` stops with a message rather than leave columns
+empty, mix two methods or credit a place with spaces it no longer has. In CI, a
+push that changes `tools/places.json` starts `archive.yml`, which re-fetches the
+months whose extracts aren't committed (`build_data.py --stale-extracts` names
+them); a poll's rebuild that fails meanwhile still commits its snapshot.
 Holidays and periods are applied when days are summed, so editing those needs
 no recompute.
 `usc_may_jun.csv` (12 May – 30 June, every event for all 248 sensored spaces
@@ -197,6 +220,7 @@ November); August's file cannot validate anything.
   the question.
 - **LADOT block faces are not decision units.** Vermont between 36th and 38th is
   six separate block faces (77 metered spaces, 65 sensored) that the parking app
-  shows as one location, and that you drive as one stretch. `build_data.py`
-  therefore clusters both sides of a hundred-block: Vermont 36xx is the 44
-  sensored spaces across 3600/3601/3650/3651.
+  shows as one location, and that you drive as one stretch. Nor are they
+  bounded by cross streets: the 3700 block face starts north of 37th Pl, so
+  clustering by hundred-block silently cut six spaces out of the middle of the
+  stretch. Places are therefore sets of spaces picked on a map.
