@@ -1,0 +1,6 @@
+# Poll snapshots are append-only and every line carries its own timestamp, which
+# build_data.py sorts, so when two runs each append a line the right answer is to
+# keep both. Without this they conflict at the same end-of-file position and the
+# losing run's poll is dropped. Scoped to these CSVs: union-merging docs/data.json
+# would produce invalid JSON.
+tools/data/**/*.csv merge=union

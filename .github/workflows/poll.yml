@@ -25,6 +25,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      # A dispatch is pinned to the SHA GitHub resolved for the ref, which can
+      # lag the branch: on 16 Sep every run from 20:25 checked out the 20:20
+      # commit. Appending to that stale file then conflicts with the newer line
+      # on rebase, and the poll is lost. Start from what main actually is.
+      - name: Start from the current head
+        run: |
+          git fetch origin "${GITHUB_REF_NAME}"
+          git reset --hard "origin/${GITHUB_REF_NAME}"
+
       - name: Poll LADOT
         working-directory: tools
         run: python3 poll_live.py --ids sensored_ids.txt --data-dir data --collector ci --only-hours 8-16:30 --only-weekdays
@@ -63,6 +72,9 @@ jobs:
               if [ "$docs" = yes ]; then gh workflow run pages.yml --ref "${GITHUB_REF_NAME}"; fi
               exit 0
             fi
+            # A rebase left conflicted fails every later attempt on "unmerged
+            # files", so the retries are wasted and the snapshot is thrown away.
+            git rebase --abort 2>/dev/null || true
             sleep $((RANDOM % 10 + 5))
           done
           echo "could not push after 3 attempts"; exit 1
