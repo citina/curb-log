@@ -249,9 +249,19 @@ def load_polls(data_dir, cluster_spaces, acc, hold_min, skip_dates):
         for c, cc in cols.items():
             # uppercase only: lowercase marks a state >24h old and '?' no state,
             # both unknown, exactly as the archive sweep drops silent sensors
-            v = sum(1 for j in cc if j < len(st) and st[j] == "V")
-            k = sum(1 for j in cc if j < len(st) and st[j] in "VO")
-            acc.add(t, b, c, v, k, "poll")
+            have = [j for j in cc if j < len(st)]
+            v = sum(1 for j in have if st[j] == "V")
+            k = sum(1 for j in have if st[j] in "VO")
+            if len(have) == len(cc):
+                acc.add(t, b, c, v, k, "poll")
+            elif have:
+                # A line written before some of this place's spaces were collected
+                # (Vermont grew from 44 to 65 on 16 Sep 2026) would fail the 80%
+                # rule for the whole place. It is kept apart instead, as a stand-in
+                # over just the spaces it had, under "<place>~<n spaces>".
+                part = f"{c}~{len(have)}"
+                acc.sizes.setdefault(part, len(have))
+                acc.add(t, b, part, v, k, "poll")
     print(f"  polls: {len(snaps):,} snapshots used"
           + (f"; archive covers {len(skip_dates)} days, polls on those days ignored" if skip_dates else ""),
           file=sys.stderr)
@@ -391,11 +401,20 @@ def main():
                 sum(float(q["longitude"]) for q in ps) / len(ps)] if ps else None
 
     agg, days, srcs = summarise(acc.cells, acc.sources, EXCLUDED)
-    periods = []
+    periods, stand_ins = [], collections.defaultdict(dict)
     for spec in PERIODS:
         pid = spec["id"]
         cells = {f"{c}|{d}|{k}": [round(v[0]), round(v[1]), round(v[2]), len(v[4]), round(v[3])]
                  for (per, c, d, k), v in sorted(agg.items()) if per == pid and v[0] > 0}
+        # a stand-in cell gives way as soon as its half hour has data for the whole place
+        for key in [q for q in cells if "~" in q.split("|")[0]]:
+            if key.split("~")[0] + "|" + key.split("|", 1)[1] in cells:
+                del cells[key]
+        for (per, c, d, k), v in agg.items():
+            if per == pid and "~" in c and f"{c}|{d}|{k}" in cells:
+                place_id, n = c.split("~")
+                s = stand_ins[place_id].setdefault(c, {"key": c, "n_spaces": int(n), "last_day": ""})
+                s["last_day"] = max(s["last_day"], max(v[4]))
         if not cells:
             continue
         periods.append({"id": pid, "label": spec["label"], "start": spec["start"], "end": spec["end"],
@@ -418,11 +437,16 @@ def main():
         "stale_hours": a.stale_hours, "min_known": a.min_known,
         "excluded_days": EXCLUDED,
         "term_start": "2026-08-24", "sensors_live": "2026-05-12",
-        # keyed by place id; name and slot (its colour) are what the page shows
-        "clusters": {pl["id"]: {"name": pl["name"], "slot": pl.get("slot"),
-                                "n_spaces": len(pl["spaces"]), "spaces": pl["spaces"],
-                                "centroid": centroid(pl["id"]),
-                                "blockfaces": sorted({meta[s]["blockface"] for s in pl["spaces"]})}
+        # keyed by place id; name and slot (its colour) are what the page shows.
+        # stand_ins: the place's cells measured over fewer spaces (load_polls),
+        # with the last day any of them covers; the page marks them.
+        "clusters": {pl["id"]: dict({"name": pl["name"], "slot": pl.get("slot"),
+                                     "n_spaces": len(pl["spaces"]), "spaces": pl["spaces"],
+                                     "centroid": centroid(pl["id"]),
+                                     "blockfaces": sorted({meta[s]["blockface"] for s in pl["spaces"]})},
+                                    **({"stand_ins": sorted(stand_ins[pl["id"]].values(),
+                                                            key=lambda s: -s["n_spaces"])}
+                                       if stand_ins.get(pl["id"]) else {}))
                      for pl in sorted(places, key=lambda q: q["id"])},
         "periods": periods,
         "default_period": periods[0]["id"] if periods else None,

@@ -98,6 +98,11 @@
         border:0;padding:0;cursor:default}
   .cell.empty{border:1px dashed var(--edge);font-size:12px}
   .cell.now{box-shadow:0 0 0 2px var(--ink)}
+  /* a stand-in over fewer spaces than the place has: a corner dot, explained under the grid */
+  .cell.partial{position:relative}
+  .cell.partial::after{content:"";position:absolute;top:3px;right:3px;width:5px;height:5px;
+                       border-radius:50%;background:currentColor}
+  .partialnote{margin:8px 0 0;font-size:12px;color:var(--ink-2);max-width:62ch}
   .cell.h0{background:var(--heat-0);color:var(--heat-0-ink)}
   .cell.h1{background:var(--heat-1);color:var(--heat-1-ink)}
   .cell.h2{background:var(--heat-2);color:var(--heat-2-ink)}
@@ -279,12 +284,31 @@ function livePeriod() {
    space we can't see is left out rather than counted as occupied.
    None-free share = seconds with no known space free / observed seconds.
    docs/METHOD.md explains it in full. A four-field cell predates
-   known_space_seconds and is read the old way. */
+   known_space_seconds and is read the old way.
+   A place that grew has, for half hours with no data yet for all its spaces, a
+   stand-in measured over the spaces collected then (data.json's stand_ins:
+   Vermont's 44 until 15 Sep). It is marked wherever it shows, and the build
+   drops it once its half hour has data for the whole place. */
 function cellIn(period, cluster, dow, slot) {
-  var v = period && period.cells[cluster + "|" + dow + "|" + slot];
+  if (!period) return null;
+  var info = S.data.clusters[cluster], n = info.n_spaces, part = null;
+  var v = period.cells[cluster + "|" + dow + "|" + slot];
+  if (!v || !v[0]) {
+    (info.stand_ins || []).some(function (s) {
+      var w = period.cells[s.key + "|" + dow + "|" + slot];
+      if (w && w[0]) { v = w; n = s.n_spaces; part = s; }
+      return !!part;
+    });
+  }
   if (!v || !v[0]) return null;
-  var free = v.length > 4 ? v[1] / v[4] * S.data.clusters[cluster].n_spaces : v[1] / v[0];
-  return { meanFree: free, zeroShare: v[2] / v[0], days: v[3] };
+  var free = v.length > 4 ? v[1] / v[4] * n : v[1] / v[0];
+  return { meanFree: free, zeroShare: v[2] / v[0], days: v[3], of: n, partial: part };
+}
+/* "the 44 spaces tracked until 15 Sep" */
+function standInLabel(s) {
+  var d = new Date(s.last_day + "T12:00");
+  return "the " + s.n_spaces + " spaces tracked until " + d.getDate() + " " +
+         d.toLocaleDateString("en-US", { month: "short" });
 }
 function cell(cluster, dow, slot) { return cellIn(curPeriod(), cluster, dow, slot); }
 function nSlots() { return Math.round((S.data.window_end - S.data.window_start) * 60 / S.data.slot_min); }
@@ -551,15 +575,20 @@ function verdict() {
 
   /* "usual" always means the current period — never summer */
   var lp = livePeriod(), inGrid = dow < 5 && k >= 0;
-  var rows = el("div", "rows"), exp = 0, liveHave = 0, have = 0, minDays = Infinity;
+  var rows = el("div", "rows"), exp = 0, liveHave = 0, have = 0, minDays = Infinity, partial = false;
   Object.keys(S.live).sort().forEach(function (c) {
     var o = S.live[c], cl = inGrid ? cellIn(lp, c, dow, k) : null;
-    if (cl) { exp += cl.meanFree; liveHave += o.free; have++; minDays = Math.min(minDays, cl.days); }
+    if (cl) {
+      have++; minDays = Math.min(minDays, cl.days);
+      /* a stand-in counts fewer spaces than the live number, so it isn't compared */
+      if (cl.partial) partial = true; else { exp += cl.meanFree; liveHave += o.free; }
+    }
     var r = el("div", "vrow"), nm = el("div", "nm");
     r.appendChild(el("span", "big", String(o.free)));
     nm.appendChild(el("div", null, place(c) + " <span style='opacity:.6'>of " + o.total + "</span>"));
     if (inGrid) nm.appendChild(el("div", "cmp", cl
-      ? "usually " + fmt1(cl.meanFree) + " free (" + cl.days + (cl.days === 1 ? " day" : " days") + " of data)"
+      ? "usually " + fmt1(cl.meanFree) + " free" + (cl.partial ? " of " + standInLabel(cl.partial) : "") +
+        " (" + cl.days + (cl.days === 1 ? " day" : " days") + " of data)"
       : "no history"));
     r.appendChild(nm);
     rows.appendChild(r);
@@ -570,13 +599,15 @@ function verdict() {
   if (!inGrid) {
     notes.push("Outside the weekday " + hourLabel(S.data.window_start) + "–" + hourLabel(S.data.window_end) +
                " grid, so there is no usual to compare against.");
-  } else if (have && minDays >= 3) {
+  } else if (have && minDays >= 3 && !partial) {
     notes.push((liveHave > exp * 1.3 ? "Better than usual" : liveHave < exp * 0.7 ? "Worse than usual" : "About normal") +
                " for this half hour in " + lp.label + ".");
-  } else if (have) {
+  } else if (have && minDays < 3) {
     /* one or two days — possibly today itself — is not a "usual" */
     notes.push("Only " + minDays + (minDays === 1 ? " day" : " days") + " of " + lp.label +
                " history for this half hour — too few to call it better or worse than usual.");
+  } else if (have) {
+    notes.push("Not compared with usual: part of this half hour’s history counts fewer spaces than the live numbers.");
   } else if (lp) {
     notes.push("No " + lp.label + " history for this half hour yet, so there is nothing to compare against.");
   }
@@ -613,17 +644,18 @@ function clusterCard(c) {
     var m = slotStartMin(k);
     g.appendChild(m % 60 === 0 ? el("div", "hcol", hourLabel(m / 60)) : el("div", "hcol half", ":30"));
   }
-  var dnow = laDow(), know = slotNow();
+  var dnow = laDow(), know = slotNow(), standIn = null;
   for (var d = 0; d < 5; d++) {
     g.appendChild(el("div", "hrow", DOW[d]));
     for (var j = 0; j < ns; j++) {
       var cl = cell(c, d, j), e;
       if (!cl) { e = el("div", "cell empty", "·"); }
       else {
-        e = el("div", "cell " + heatClass(cl.meanFree / info.n_spaces), fmt1(cl.meanFree));
+        e = el("div", "cell " + heatClass(cl.meanFree / cl.of) + (cl.partial ? " partial" : ""), fmt1(cl.meanFree));
         e.title = DOW[d] + " " + slotLabel(j) + "–" + slotLabel(j + 1) + ": " + fmt1(cl.meanFree) +
-                  " free on average of " + info.n_spaces + " · none free " + Math.round(cl.zeroShare * 100) +
-                  "% of the time · " + confidence(cl.days);
+                  " free on average of " + (cl.partial ? standInLabel(cl.partial) : cl.of) + " · none free " +
+                  Math.round(cl.zeroShare * 100) + "% of the time · " + confidence(cl.days);
+        if (cl.partial) standIn = cl.partial;
       }
       if (d === dnow && j === know) e.classList.add("now");
       g.appendChild(e);
@@ -642,6 +674,10 @@ function clusterCard(c) {
   lg.appendChild(el("span", null, "40%+ free"));
   lg.appendChild(el("span", null, "· dashed = never measured · ring = right now"));
   card.appendChild(lg);
+  if (standIn) card.appendChild(el("p", "partialnote",
+    "Cells with a corner dot count only " + standInLabel(standIn) + ", before the other " +
+    (info.n_spaces - standIn.n_spaces) + " were added. Each is replaced once that half hour has data for all " +
+    info.n_spaces + "."));
   return card;
 }
 
@@ -690,7 +726,9 @@ function predictCard() {
       box.innerHTML = "<strong>" + place(c) + "</strong><br>" +
         "<span style='font-family:\"IBM Plex Mono\",monospace;font-size:19px;font-weight:600'>" +
         fmt1(cl.meanFree) + "</span> <span style='font-size:13px;color:var(--ink-2)'>free on average of " +
-        S.data.clusters[c].n_spaces + "</span><br>" +
+        (cl.partial ? standInLabel(cl.partial) : cl.of) + "</span><br>" +
+        (cl.partial ? "<span class='partialnote' style='display:block;margin:0 0 2px'>Replaced once this half hour " +
+                      "has data for all " + S.data.clusters[c].n_spaces + ".</span>" : "") +
         "<span style='font-size:13px;color:var(--ink-2)'>Not one space free <strong>" +
         Math.round(cl.zeroShare * 100) + "%</strong> of the time · " + confidence(cl.days) + "</span>";
     }

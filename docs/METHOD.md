@@ -117,7 +117,7 @@ Otherwise its last reported state stands.
   end of June). Seventy-two hours keeps a whole weekend and still drops a stuck
   sensor after three days; 96 hours or a week give nearly the same numbers.
 - **At least 80% known.** A stretch of time counts only while at least 80% of the
-  stretch's sensors are known: 9 of 11 on 36th Street, 36 of 44 on Vermont. Below
+  stretch's sensors are known: 9 of 11 on 36th Street, 52 of 65 on Vermont. Below
   that, a few sensors would be standing in for the whole block. In the summer
   data this removes only 12 May, installation day, when the sensors came online
   through the morning.
@@ -137,6 +137,16 @@ replaces the checks anyway.) The 80% rule and the days left out apply to checks
 too. Why checks are stored as snapshots rather than as a log of changes is in
 the README.
 
+**When a place grows.** A check made before some of a place's spaces were
+collected has nothing for them, so it fails the 80% rule for the whole place.
+Rather than leave those half hours blank, each is kept as a *stand-in* measured
+over just the spaces the check had: Vermont's checks from 10 to 15 September
+cover the 44 spaces tracked before it grew to 65. The page marks a stand-in with
+a corner dot and a note, and never mixes it with whole-place data. A half hour's
+stand-in is dropped as soon as that half hour has any whole-place data, and the
+archive replaces checks outright. A stand-in understates what's free on the
+whole stretch if the new spaces are emptier, as Vermont's were in summer.
+
 ### What's stored
 
 Each cell in `docs/data.json` is
@@ -148,7 +158,9 @@ Each cell in `docs/data.json` is
 as `cell_format` says. Mean free = `cell[1] / cell[4] × n_spaces`; none free =
 `cell[2] / cell[0]`. The known field comes last so a page cached from before it
 existed still reads the first four. `stale_hours`, `min_known` and
-`excluded_days` record the rules the file was built with.
+`excluded_days` record the rules the file was built with. A stand-in's cells are
+keyed by the place and the spaces it counts (`vermont~44|dow|slot`), and the
+place lists them under `stand_ins` with the last day they cover.
 
 `tools/archive_cells.json` keeps the archive's sums per extract file and per
 day, stamped with the grid (window and cell length) and the method (stale hours,

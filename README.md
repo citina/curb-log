@@ -27,11 +27,13 @@ these places the fallback is free (unmetered) street parking, which has no
 sensors — so "how often is this stretch empty" matters as much as "how many
 spaces are free".
 
-Polling covered only the old 44 Vermont spaces from 10 to 15 September, below
-the 80% of a place that must be known for its time to count. So Vermont's term
-grid holds nothing but 9 September afternoon — when collection was still wide —
-until the wide polls resuming on 16 September accumulate. The September archive
-(~early November) fills the gap in exactly. 36th St is unaffected throughout.
+Polling covered only the original 44 Vermont spaces from 10 to 15 September,
+below the 80% of a place that must be known for its time to count. Rather than
+leave those half hours blank, the page shows them as stand-ins over the 44,
+marked with a corner dot and a note; the page is for personal use, and an
+approximate figure that says so beats a blank. Each stand-in gives way as soon
+as its half hour has polls for all 65, and the September archive (~early
+November) replaces them all exactly. 36th St is unaffected throughout.
 
 ## Data sources (data.lacity.org)
 
