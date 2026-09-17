@@ -58,8 +58,6 @@ term-time history exists. That is why `poll_live.py` exists.
 ./build_data.py --report                                   # the page's data, for places.json; grids in the terminal
 ./map_spaces.py --bare --out ../docs/basemap.png --overview ../docs/basemap-overview.png --json ../docs/map.json
 ./poll_live.py --ids sensored_ids.txt --collector laptop   # one snapshot
-./install_poller.sh                                        # laptop poller (5 min) + publisher (30 min)
-./publish.py                                               # what the publisher runs
 ```
 
 ### How "spaces free" is computed
@@ -134,30 +132,22 @@ dispatches after 4:30 poll nothing (`poll_live.py` applies the exact window), bu
 the 4:30 one still publishes the day's last half hour.
 
 **One writer.** `tools/publisher.txt` names the only thing that rebuilds
-`docs/data.json`: `laptop` or `ci`. While it says `laptop`, the laptop publisher
-builds the page and CI only appends polls. When it says `ci`, the :00 and :30 poll
-runs rebuild it and `publish.py` does nothing. `archive.yml` obeys the same file.
-`data_through` is stamped from the newest data rather than the clock, so a
-rebuild with nothing new produces no commit.
+`docs/data.json`; it has said `ci` since 15 September, so the :00 and :30 poll
+runs rebuild it and `archive.yml` obeys the same file. `data_through` is
+stamped from the newest data rather than the clock, so a rebuild with nothing
+new produces no commit.
 
-**The laptop, retired 15 September.** `install_poller.sh` installs two launchd
-jobs: the poller (every 5 minutes, into `tools/data/laptop/`) and the publisher
-(`publish.py`, every 30 minutes), which pulls, rebuilds `docs/data.json`, and
-pushes, with pathspec-limited commits so nothing else in the working copy is
-swept up. Both run only while the Mac is awake: on 10 September it took 65 of
-108 five-minute polls, and on 15 September it took none — the page sat a day
-stale on yesterday's data while CI held that morning complete, which is what
-`publisher.txt` was flipped to `ci` to end. The criterion it had to meet first
-was a full weekday of CI polls at about 12 an hour (`cut -c12-13
-tools/data/ci/<day>.csv | sort | uniq -c` counts them per UTC hour; 8am–4:30pm
-PDT is 15:00–23:30 UTC), which 14 September met exactly.
-
-Nothing now depends on the Mac. To finish the teardown on it:
-`launchctl bootout gui/$(id -u)/com.citina.curblog.poll` and the same for
-`com.citina.curblog.publish`, then delete both plists from
-`~/Library/LaunchAgents`. Until that runs, the poller keeps writing
-`tools/data/laptop/` locally and `publish.py` no longer pushes it, so those
-polls stay on the Mac.
+**The laptop, retired 15 September.** Until then a launchd poller (every 5
+minutes, into `tools/data/laptop/`) and a 30-minute publisher pushed
+`docs/data.json` from the Mac. Both ran only while the Mac was awake: on 10
+September that took 65 of 108 five-minute polls, and on 15 September it took
+none — the page sat a day stale on yesterday's data while CI held that morning
+complete, which is what `publisher.txt` was flipped to `ci` to end. The
+criterion it had to meet first was a full weekday of CI polls at about 12 an
+hour (`cut -c12-13 tools/data/ci/<day>.csv | sort | uniq -c` counts them per
+UTC hour; 8am–4:30pm PDT is 15:00–23:30 UTC), which 14 September met exactly.
+The launchd jobs are gone, and `tools/install_poller.sh`/`tools/publish.py`
+were removed with them; nothing now depends on the Mac.
 
 **The page deploys from `.github/workflows/pages.yml`**, not GitHub's branch
 build, so only a change under `docs/` publishes it; under the branch build every
