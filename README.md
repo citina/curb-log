@@ -1,5 +1,10 @@
 # Curb Log — USC street parking study
 
+Whether there's a space near the office depends on the hour and the day, and the
+only way to learn that by hand is to keep looking. LADOT has a sensor in every
+metered space on these blocks and publishes what they report, so this project
+reads that record instead, and keeps reading it.
+
 Finding out when street parking is available on the stretch actually walkable
 from an office near USC DPS, using LADOT's open sensor data rather than manual
 observation.
@@ -222,3 +227,12 @@ November); August's file cannot validate anything.
   bounded by cross streets: the 3700 block face starts north of 37th Pl, so
   clustering by hundred-block silently cut six spaces out of the middle of the
   stretch. Places are therefore sets of spaces picked on a map.
+
+## Who made this
+
+Citina Liang, a PhD candidate in Industrial & Systems Engineering at USC
+Viterbi, who models how people behave and how diseases spread to help public health make
+better decisions, with Claude Code. Curb Log is the first of
+three pages about parking in Los Angeles; the others are
+[USC Ticket Clock](https://citina.github.io/ticket-clock/) and
+[LA Street Rules](https://citina.github.io/ticket-clock/streets/).

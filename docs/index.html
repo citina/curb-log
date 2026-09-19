@@ -52,6 +52,24 @@
   .masthead h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em}
   .masthead .sub{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);
                  text-transform:uppercase;letter-spacing:.08em}
+  /* the sister-site menu, the same on all three pages */
+  .mast{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+        color:var(--ink-3);display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;padding:16px 2px 0}
+  .mast a{color:inherit}
+  .mast .site{white-space:nowrap}   /* on phones it wraps between names, not inside one */
+  .mast .here{color:var(--ink)}
+  .intro{margin:0 0 16px;font-size:14px;line-height:1.5;color:var(--ink-2)}
+  /* about these pages, with the sister sites, after the views */
+  .about{margin:28px 0 0;padding-top:20px;border-top:1px solid var(--rule)}
+  .about p:not(.eyebrow){margin:0;font-size:14px;line-height:1.5;color:var(--ink-2)}
+  .about a{color:var(--accent-ink)}
+  .sibs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0 0}
+  @media (max-width:640px){ .sibs{grid-template-columns:minmax(0,1fr)} }
+  .sib{display:block;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:16px 18px;color:inherit;text-decoration:none}
+  .sib:hover{border-color:var(--ink-3)}
+  .sib-name{font-weight:700;font-size:20px;line-height:1.1;color:var(--ink)}
+  .sib-name::after{content:" →";color:var(--ink-3);font-weight:600}
+  .sib-txt{font-size:13.5px;line-height:1.5;color:var(--ink-2);margin:6px 0 0}
   .nav{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:repeat(2,1fr);
        gap:2px;padding:6px;margin-bottom:16px;background:var(--well);border-radius:10px;
        box-shadow:0 6px 18px -12px rgba(0,0,0,.5)}
@@ -185,10 +203,12 @@
 </head>
 <body>
 <div class="wrap">
+  <nav class="mast" aria-label="Sister sites"><span><span class="site here" aria-current="page">Curb Log</span> · <a class="site" href="https://citina.github.io/ticket-clock/">USC Ticket Clock</a> · <a class="site" href="https://citina.github.io/ticket-clock/streets/">LA Street Rules</a></span><a href="#about">About</a></nav>
   <header class="masthead">
     <h1>Curb Log</h1>
     <span class="sub" id="sub">USC · street parking</span>
   </header>
+  <p class="intro">How much street parking is usually available near an office at USC, by half hour and weekday, from LADOT's curb sensors. Basis is where the places and hours are picked; Pattern is the answer.</p>
 
   <nav class="nav" role="tablist">
     <button role="tab" data-view="basis" aria-selected="false">1 · Basis</button>
@@ -196,6 +216,15 @@
   </nav>
 
   <main id="view"></main>
+
+  <section class="about" id="about">
+    <p class="eyebrow">About these pages</p>
+    <p>Made by <a href="https://github.com/citina">Citina Liang</a>, a PhD candidate in Industrial &amp; Systems Engineering at USC Viterbi who models how people behave and how diseases spread. It started when she missed the deadline for a campus parking pass. Curb Log came first, to learn when the meters near her office have space. Its grid showed the hardest days were when the side streets are swept, which raised the next question: when does enforcement actually come? USC Ticket Clock answers that from the city's own tickets, and LA Street Rules does it for every block in Los Angeles. All from the city's open data, and it updates itself. Built with Claude Code; the code is on <a href="https://github.com/citina/curb-log">GitHub</a>.</p>
+    <div class="sibs">
+      <a class="sib" href="https://citina.github.io/ticket-clock/"><div class="sib-name">USC Ticket Clock</div><div class="sib-txt">The streets around USC in more detail: each side's sweeping schedule, when the first and last sweeping tickets usually land, and how often meter officers walk past, by half hour and weekday.</div></a>
+      <a class="sib" href="https://citina.github.io/ticket-clock/streets/"><div class="sib-name">LA Street Rules</div><div class="sib-txt">Any block in the City of Los Angeles: search a street or use your location for its sweeping day, hours and weeks, how often meter officers come by, and what else gets ticketed there.</div></a>
+    </div>
+  </section>
 
   <p class="foot" id="foot"></p>
 </div>

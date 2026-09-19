@@ -23,8 +23,9 @@ The colour is the share of the stretch that was free, so the two stretches
 
 ## Where the data comes from
 
-Every metered space on these blocks has a sensor in the pavement, run by LADOT,
-which publishes two feeds on data.lacity.org:
+Every metered space on these blocks has an occupancy sensor, run by LADOT, that
+reports whether a car is in the space (it knows nothing about payment). LADOT
+publishes two feeds on data.lacity.org:
 
 - the **live feed**, each space's current state, fresh to the second;
 - the **archive**, a monthly log of every change, about two months late
