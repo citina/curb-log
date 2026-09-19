@@ -63,6 +63,7 @@
   .about{margin:28px 0 0;padding-top:20px;border-top:1px solid var(--rule)}
   .about p:not(.eyebrow){margin:0;font-size:14px;line-height:1.5;color:var(--ink-2)}
   .about a{color:var(--accent-ink)}
+  .about b{color:var(--ink);font-weight:600}
   .sibs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0 0}
   @media (max-width:640px){ .sibs{grid-template-columns:minmax(0,1fr)} }
   .sib{display:block;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:16px 18px;color:inherit;text-decoration:none}
@@ -219,7 +220,7 @@
 
   <section class="about" id="about">
     <p class="eyebrow">About these pages</p>
-    <p>Made by <a href="https://github.com/citina">Citina Liang</a>, a PhD candidate in Industrial &amp; Systems Engineering at USC Viterbi who models how people behave and how diseases spread. It started when she missed the deadline for a campus parking pass. Curb Log came first, to learn when the meters near her office have space. Its grid showed the hardest days were when the side streets are swept, which raised the next question: when does enforcement actually come? USC Ticket Clock answers that from the city's own tickets, and LA Street Rules does it for every block in Los Angeles. All from the city's open data, and it updates itself. Built with Claude Code; the code is on <a href="https://github.com/citina/curb-log">GitHub</a>.</p>
+    <p>Made by <a href="https://github.com/citina">Citina Liang</a>, a PhD candidate in Industrial &amp; Systems Engineering at USC Viterbi who models how people behave and how diseases spread. It started when she missed the deadline for a campus parking pass. Curb Log came first, to learn <b>when the meters near her office have space</b>. Its grid showed the hardest days were <b>when the side streets are swept</b>, which raised the next question: <b>when does enforcement actually come?</b> <a href="https://citina.github.io/ticket-clock/">USC Ticket Clock</a> answers that from the city's own tickets, and <a href="https://citina.github.io/ticket-clock/streets/">LA Street Rules</a> does it for every block in Los Angeles. All from the city's open data, and it updates itself. Built with Claude Code in about a week; the code is on <a href="https://github.com/citina/curb-log">GitHub</a>.</p>
     <div class="sibs">
       <a class="sib" href="https://citina.github.io/ticket-clock/"><div class="sib-name">USC Ticket Clock</div><div class="sib-txt">The streets around USC in more detail: each side's sweeping schedule, when the first and last sweeping tickets usually land, and how often meter officers walk past, by half hour and weekday.</div></a>
       <a class="sib" href="https://citina.github.io/ticket-clock/streets/"><div class="sib-name">LA Street Rules</div><div class="sib-txt">Any block in the City of Los Angeles: search a street or use your location for its sweeping day, hours and weeks, how often meter officers come by, and what else gets ticketed there.</div></a>
