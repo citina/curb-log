@@ -66,6 +66,7 @@
   .about b{color:var(--ink);font-weight:600}
   .sibs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:16px 0 0}
   @media (max-width:640px){ .sibs{grid-template-columns:minmax(0,1fr)} }
+  .sib.wide{grid-column:1/-1}   /* the third card, the other city, takes the whole row */
   .sib{display:block;background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:16px 18px;color:inherit;text-decoration:none}
   .sib:hover{border-color:var(--ink-3)}
   .sib-name{font-weight:700;font-size:20px;line-height:1.1;color:var(--ink)}
@@ -204,7 +205,7 @@
 </head>
 <body>
 <div class="wrap">
-  <nav class="mast" aria-label="Sister sites"><span><span class="site here" aria-current="page">Curb Log</span> · <a class="site" href="https://citina.github.io/ticket-clock/">USC Ticket Clock</a> · <a class="site" href="https://citina.github.io/ticket-clock/streets/">LA Street Rules</a></span><a href="#about">About</a></nav>
+  <nav class="mast" aria-label="Sister sites"><span><span class="site here" aria-current="page">Curb Log</span> · <a class="site" href="https://citina.github.io/ticket-clock/">USC Ticket Clock</a> · <a class="site" href="https://citina.github.io/ticket-clock/streets/">LA Street Rules</a> · <a class="site" href="https://citina.github.io/sf-streets/">SF Streets</a></span><a href="#about">About</a></nav>
   <header class="masthead">
     <h1>Curb Log</h1>
     <span class="sub" id="sub">USC · street parking</span>
@@ -224,6 +225,7 @@
     <div class="sibs">
       <a class="sib" href="https://citina.github.io/ticket-clock/"><div class="sib-name">USC Ticket Clock</div><div class="sib-txt">The streets around USC in more detail: each side's sweeping schedule, when the first and last sweeping tickets usually land, and how often meter officers walk past, by half hour and weekday.</div></a>
       <a class="sib" href="https://citina.github.io/ticket-clock/streets/"><div class="sib-name">LA Street Rules</div><div class="sib-txt">Any block in the City of Los Angeles: search a street or use your location for its sweeping day, hours and weeks, how often meter officers come by, and what else gets ticketed there.</div></a>
+      <a class="sib wide" href="https://citina.github.io/sf-streets/"><div class="sib-name">SF Streets</div><div class="sib-txt">The same idea for San Francisco, on one map: for drivers, whether you can park on a block and for how long, with its cleaning, meters and tickets; for people walking, what gets reported to police and how often people walking are hit around a spot you pick.</div></a>
     </div>
   </section>
 
