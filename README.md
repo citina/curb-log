@@ -234,5 +234,5 @@ Citina Liang, a PhD candidate in Industrial & Systems Engineering at USC
 Viterbi, who models how people behave and how diseases spread to help public health make
 better decisions, with Claude Code. Curb Log is the first of
 three pages about parking in Los Angeles; the others are
-[USC Ticket Clock](https://citina.github.io/ticket-clock/) and
-[LA Street Rules](https://citina.github.io/ticket-clock/streets/).
+[USC Ticket Clock](https://citina.github.io/la-streets/) and
+[LA Street Rules](https://citina.github.io/la-streets/streets/).
