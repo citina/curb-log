@@ -5,6 +5,13 @@ only way to learn that by hand is to keep looking. LADOT has a sensor in every
 metered space on these blocks and publishes what they report, so this project
 reads that record instead, and keeps reading it.
 
+**Live: [citina.github.io/curb-log](https://citina.github.io/curb-log/)**
+
+![The fall-term grids for 36th St and Vermont Ave, "If I go at" Thursday 11:30, then the summer grid](readme/demo.gif)
+*Each grid is the average number of spaces free by weekday and half hour; on Vermont, Wednesdays and Thursdays around
+noon are the hardest. "If I go at…" answers one day and time. Summer is no guide to term time: midday vacancy ran about
+49% in summer and 6% once classes began.*
+
 Finding out when street parking is available on the stretch actually walkable
 from an office near USC DPS, using LADOT's open sensor data rather than manual
 observation.
