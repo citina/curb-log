@@ -58,6 +58,15 @@
   .mast a{color:inherit}
   .mast .site{white-space:nowrap}   /* on phones it wraps between names, not inside one */
   .mast .here{color:var(--ink)}
+  .mast .upd:empty+.dot{display:none}   /* no date until the data loads */
+  /* a phone: "About" stays top right while the site names wrap, and the date gets its own line under them */
+  @media (max-width:560px){
+    .mast{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start}
+    .mast .end{display:contents}
+    .mast .end a{grid-area:1/2}
+    .mast .upd{grid-area:2/1}
+    .mast .upd:empty,.mast .dot{display:none}
+  }
   .intro{margin:0 0 16px;font-size:14px;line-height:1.5;color:var(--ink-2)}
   /* about these pages, with the sister sites, after the views */
   .about{margin:28px 0 0;padding-top:20px;border-top:1px solid var(--rule)}
@@ -205,7 +214,7 @@
 </head>
 <body>
 <div class="wrap">
-  <nav class="mast" aria-label="Sister sites"><span><span class="site here" aria-current="page">Curb Log</span> · <a class="site" href="https://citina.github.io/la-streets/">USC Ticket Clock</a> · <a class="site" href="https://citina.github.io/la-streets/streets/">LA Street Rules</a> · <a class="site" href="https://citina.github.io/sf-streets/">SF Streets</a></span><a href="#about">About</a></nav>
+  <nav class="mast" aria-label="Sister sites"><span><span class="site here" aria-current="page">Curb Log</span> · <a class="site" href="https://citina.github.io/la-streets/">USC Ticket Clock</a> · <a class="site" href="https://citina.github.io/la-streets/streets/">LA Street Rules</a> · <a class="site" href="https://citina.github.io/sf-streets/">SF Streets</a></span><span class="end"><span class="upd" id="upd"></span><span class="dot"> · </span><a href="#about">About</a></span></nav>
   <header class="masthead">
     <h1>Curb Log</h1>
     <span class="sub" id="sub">USC · street parking</span>
@@ -221,7 +230,7 @@
 
   <section class="about" id="about">
     <p class="eyebrow">About these pages</p>
-    <p>Made by Citina Liang, built with Claude Code in about a week. Connect with me on <a href="https://www.linkedin.com/in/citina/">LinkedIn</a>, see the code and star it on <a href="https://github.com/citina/curb-log">GitHub</a>, or email me at <a href="mailto:citina.liang@gmail.com">citina.liang@gmail.com</a>. See more sister pages below.</p>
+    <p>Made by Citina Liang with Claude Code in less than a week. The page updates itself every half hour on weekdays. All sources are from official public data. <a href="https://www.linkedin.com/in/citina/">LinkedIn</a> · <a href="https://github.com/citina/curb-log">GitHub</a> · <a href="mailto:citina.liang@gmail.com">citina.liang@gmail.com</a></p>
     <div class="sibs">
       <a class="sib" href="https://citina.github.io/la-streets/"><div class="sib-name">USC Ticket Clock</div><div class="sib-txt">The streets around USC in more detail: each side's sweeping schedule, when the first and last sweeping tickets usually land, and how often meter officers walk past, by half hour and weekday.</div></a>
       <a class="sib" href="https://citina.github.io/la-streets/streets/"><div class="sib-name">LA Street Rules</div><div class="sib-txt">Any block in the City of Los Angeles: search a street or use your location for its sweeping day, hours and weeks, how often meter officers come by, and what else gets ticketed there.</div></a>
@@ -272,6 +281,11 @@ function throughLabel(iso) {           // "2026-09-10T10:29", already LA local
   return DOW[(d.getDay() + 6) % 7] + " " + p[2] + " " +
     ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][p[1] - 1] + ", " +
     (h % 12 === 0 ? 12 : h % 12) + ":" + (mm < 10 ? "0" : "") + mm + (h < 12 ? "a" : "p");
+}
+function updLabel(iso) {             // "Oct 7, 4:25 PM" for the masthead, already LA local
+  var p = iso.split(/[-T:]/).map(Number), h = p[3], mm = p[4];
+  return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][p[1] - 1] + " " + p[2] + ", " +
+    (h % 12 === 0 ? 12 : h % 12) + ":" + (mm < 10 ? "0" : "") + mm + (h < 12 ? " AM" : " PM");
 }
 function fmt1(n) { return (Math.round(n * 10) / 10).toFixed(1).replace(/\.0$/, ""); }
 /* data.json keys each place by its id in tools/places.json ("vermont") and
@@ -1103,6 +1117,7 @@ fetch("data.json", { cache: "no-store" })
   .then(function (r) { return r.json(); })
   .then(function (j) {
     S.data = j;
+    if (j.data_through) document.getElementById("upd").textContent = "Updated " + updLabel(j.data_through);
     S.period = j.default_period;
     S.basis = loadBasis() || defaultBasis();
     return mapLoad;
