@@ -64,12 +64,22 @@ jobs:
           fi
           git diff --cached --quiet -- docs && docs=no || docs=yes
           git commit -m "poll $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # Start pages.yml: a push made with this token doesn't trigger it.
+          # The data is already pushed by the time this runs, so a GitHub error
+          # here (run 45650297598 got an HTTP 500) must not fail the run: try
+          # three times, then warn. "deploy page" can also be run by hand.
+          start_deploy() {
+            for j in 1 2 3; do
+              gh workflow run pages.yml --ref "${GITHUB_REF_NAME}" && return 0
+              sleep 10
+            done
+            echo "::warning::data pushed, but the page deploy could not be started"
+          }
           # Another run may have pushed while we worked; rebase and retry.
           for i in 1 2 3; do
             if git pull --rebase --autostash origin "${GITHUB_REF_NAME}" && \
                git push origin "HEAD:${GITHUB_REF_NAME}"; then
-              # A push made with this token doesn't trigger pages.yml, so start it.
-              if [ "$docs" = yes ]; then gh workflow run pages.yml --ref "${GITHUB_REF_NAME}"; fi
+              if [ "$docs" = yes ]; then start_deploy; fi
               exit 0
             fi
             # A rebase left conflicted fails every later attempt on "unmerged
